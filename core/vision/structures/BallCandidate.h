@@ -16,6 +16,11 @@ struct BallCandidate {
   float groundDistance;
   float confidence;
   float kwDistanceDiscrepancy;
+
+  float ar;
+  float midh;
+  float clr;  
+
   Blob* blob;
   Position relPosition;
   Position absPosition;

@@ -16,7 +16,8 @@
 
 /// @ingroup vision
 class CameraMatrix {
-  private:
+  //private:
+  public:
     Eigen::Matrix4f worldToCam_, camToWorld_;
     Eigen::Matrix3f coordinateShift_;
     Eigen::Matrix3f cameraCalibration_;
@@ -27,7 +28,6 @@ class CameraMatrix {
     RobotCalibration cal_;
     float fx_, fy_, scale_, cx_, cy_;
 
-  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     CameraMatrix(const ImageParams& iparams, const Camera::Type& type);
 

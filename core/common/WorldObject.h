@@ -378,6 +378,7 @@ DECLARE_INTERNAL_SCHEMA(class WorldObject {
     SCHEMA_FIELD(Point2D loc); ///< The object's location in global field coordinates.
     SCHEMA_FIELD(Point2D endLoc);
     SCHEMA_FIELD(float height); ///< The hight of the object from the field floor.
+    SCHEMA_FIELD(bool occlude); ///< The hight of the object from the field floor.
 
     // for lines
     // for unknown lines this is the relative x,y (x in front, y to left) of the end points of the observed line segment
