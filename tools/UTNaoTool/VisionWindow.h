@@ -118,7 +118,6 @@ class VisionWindow : public ConfigWindow, public Ui_UTVisionWindow {
     void update(MemoryFrame* memory);
     void drawBallCands(ImageWidget* image);
     void drawBall(ImageWidget* image);
-    void drawGoal(ImageWidget* image);
     void drawTransformedPoints(ImageWidget *image);
     void drawWorldObject(ImageWidget* image, QColor color, int worldObjectID);
     void drawHorizonLine(ImageWidget* image);
@@ -127,7 +126,9 @@ class VisionWindow : public ConfigWindow, public Ui_UTVisionWindow {
     void drawRawImage(ImageWidget*);
     void drawSmallSegmentedImage(ImageWidget *image);
     void drawSegmentedImage(ImageWidget *image);
+    void drawGraphSegmentedImage(ImageWidget *image, bool classify);
     void drawBeacons(ImageWidget *image);
+    void drawGoal(ImageWidget *image);
     void changeBigImage(int type, int cam);
     void updateBigImage();
     void updateBigImage(ImageWidget *image);

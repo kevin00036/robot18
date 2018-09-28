@@ -75,10 +75,10 @@ void VisionWindow::updateBigImage() {
   if (currentBigImageType_ == SEG_IMAGE){
     drawSegmentedImage(bigImage);
     if (cbxOverlay->isChecked()) {
-      drawGoal(bigImage);
       drawBall(bigImage);
       drawBallCands(bigImage);
       drawBeacons(bigImage);
+      drawGoal(bigImage);
     }
   }
 
@@ -89,6 +89,8 @@ void VisionWindow::updateBigImage() {
 void VisionWindow::redrawImages(ImageWidget* rawImage, ImageWidget* segImage, ImageWidget* objImage, ImageWidget* horizontalBlobImage, ImageWidget* verticalBlobImage, ImageWidget* transformedImage) {
   drawRawImage(rawImage);
   drawSmallSegmentedImage(segImage);
+  drawGraphSegmentedImage(horizontalBlobImage, false);
+  drawGraphSegmentedImage(verticalBlobImage, true);
 
   objImage->fill(0);
   drawBall(objImage);
@@ -102,15 +104,15 @@ void VisionWindow::redrawImages(ImageWidget* rawImage, ImageWidget* segImage, Im
 
   // if overlay is on, then draw objects on the raw and seg image as well
   if (cbxOverlay->isChecked()) {
-    drawGoal(rawImage);
     drawBall(rawImage);
     drawBallCands(rawImage);
     drawBeacons(rawImage);
+    drawGoal(rawImage);
 
-    drawGoal(segImage);
     drawBall(segImage);
     drawBallCands(segImage);
     drawBeacons(segImage);
+    drawGoal(segImage);
   }
 
   drawBall(verticalBlobImage);
@@ -204,6 +206,43 @@ void VisionWindow::drawSegmentedImage(ImageWidget *image) {
     drawHorizonLine(image);
 }
 
+void VisionWindow::drawGraphSegmentedImage(ImageWidget *image, bool classify) {
+  ImageProcessor* processor = getImageProcessor(image);
+  const ImageParams& iparams = processor->getImageParams();
+
+  int* GsegImg = processor->getGSegImg();
+  if (robot_vision_block_ == NULL || GsegImg == NULL) {
+    image->fill(0);
+    return;
+  }
+
+  // Seg image from memory
+  for (int y = 0; y < iparams.height; y++) {
+    for (int x = 0; x < iparams.width; x++) {
+      int c = GsegImg[iparams.width * y + x];
+      //unsigned char r = c * 133 + 125, g = c * 75 + 33, b = c * 193 + 179;
+      int cc = (c >> 24) & 0xff;
+      int yy = c & 0xff, uu = ((c >> 8) & 0xff) - 128, vv = ((c >> 16) & 0xff) - 128;
+      int r = yy + 1.402f * vv;
+      int g = yy - (0.344f * uu + 0.714f * vv);
+      int b = yy + 1.772f * uu;
+      r = r>255? 255 : r<0 ? 0 : r;
+      g = g>255? 255 : g<0 ? 0 : g;
+      b = b>255? 255 : b<0 ? 0 : b;
+
+
+      if(classify)
+        image->setPixel(x, y, segRGB[cc]);
+      else
+        image->setPixel(x, y, qRgb(r, g, b));
+
+    }
+  }
+
+  if(cbxHorizon->isChecked())
+    drawHorizonLine(image);
+}
+
 void VisionWindow::drawBall(ImageWidget* image) {
   if(!config_.all) return;
   if(!config_.ball) return;
@@ -230,36 +269,47 @@ void VisionWindow::drawBall(ImageWidget* image) {
   }
 }
 
-void VisionWindow::drawGoal(ImageWidget* image) {
+void VisionWindow::drawBallCands(ImageWidget* image) {
   if(!config_.all) return;
-  if(world_object_block_ == NULL) return;
-
-  auto processor = getImageProcessor(image);
-  const auto& cmatrix = processor->getCameraMatrix();
+  if(!config_.ball) return;
   QPainter painter(image->getImage());
-  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setPen(QPen(QColor(127, 0, 255), 1));
 
-  auto& goal = world_object_block_->objects_[WO_UNKNOWN_GOAL];
-  if(not goal.seen) return;
-  if(goal.fromTopCamera and _widgetAssignments[image] == Camera::BOTTOM) return;
-  if(not goal.fromTopCamera and _widgetAssignments[image] == Camera::TOP) return;
-  std::cout << "Drawing goal" << std::endl;
-  QPen pen(segCol[c_BLUE]);
+  ImageProcessor* processor = getImageProcessor(image);
 
-  int width = cmatrix.getCameraWidthByDistance(goal.visionDistance, 110);
-  int height = cmatrix.getCameraHeightByDistance(goal.visionDistance, 100);
-  int x1 = goal.imageCenterX - width / 2;
-  
-  // Draw top
-  int ty1 = goal.imageCenterY - height;
-  QPainterPath path;
-  path.addRoundedRect(QRect(x1, ty1, width, height), 5, 5);
-  painter.setPen(pen);
-  painter.fillPath(path, QBrush(segCol[c_BLUE]));
+  vector<BallCandidate*> cands = processor->getBallCandidates();
 
+  for(auto b: cands) {
+    int r = b->radius;
+    painter.drawEllipse(
+        (int)b->centerX - r - 1,
+        (int)b->centerY - r - 1, 2 * r + 2, 2 * r + 2);
+  }
 }
 
-void VisionWindow::drawBallCands(ImageWidget* image) {
+void VisionWindow::drawGoal(ImageWidget* image) {
+  if(!config_.all) return;
+  //if(!config_.ball) return;
+  QPainter painter(image->getImage());
+  painter.setPen(QPen(QColor(127, 127, 255), 3));
+  if (world_object_block_ != NULL) {
+    ImageProcessor* processor = getImageProcessor(image);
+    WorldObject* goal = &world_object_block_->objects_[WO_OWN_GOAL];
+    if(!goal->seen) return;
+    if( (goal->fromTopCamera && _widgetAssignments[image] == Camera::BOTTOM) ||
+        (!goal->fromTopCamera && _widgetAssignments[image] == Camera::TOP) ) return;
+
+    int width = processor->gw, height = processor->gh;
+    //QPainterPath tpath;
+    //tpath.addRoundedRect(QRect(goal->imageCenterX - width/2, goal->imageCenterY - height/2, width, height), 5, 5);
+    painter.drawRoundedRect(QRect(goal->imageCenterX - width/2, goal->imageCenterY - height/2, width, height), 5, 5);
+    //painter.drawPath(tpath, QBrush(beacon.second[0]));
+    QPen textpen(segCol[c_UNDEFINED]);
+    painter.setPen(textpen);
+    //painter.drawText(goal->imageCenterX - width/2, goal->imageCenterY - 10, to_string(goal->visionDistance).c_str());
+    painter.drawText(goal->imageCenterX - width/2, goal->imageCenterY + 10, to_string(goal->distance).c_str());
+
+  }
 }
 
 void VisionWindow::drawHorizonLine(ImageWidget *image) {
@@ -315,8 +365,9 @@ void VisionWindow::drawWorldObject(ImageWidget* image, QColor color, int worldOb
 void VisionWindow::drawBeacons(ImageWidget* image) {
   if(!config_.all) return;
   if(world_object_block_ == NULL) return;
+
   map<WorldObjectType,vector<QColor>> beacons = {
-    { WO_BEACON_BLUE_YELLOW, { segCol[c_BLUE], segCol[c_YELLOW] } },
+    { WO_BEACON_BLUE_YELLOW, { segCol[c_BLUE], segCol[c_YELLOW] } } ,
     { WO_BEACON_YELLOW_BLUE, { segCol[c_YELLOW], segCol[c_BLUE] } },
     { WO_BEACON_BLUE_PINK, { segCol[c_BLUE], segCol[c_PINK] } },
     { WO_BEACON_PINK_BLUE, { segCol[c_PINK], segCol[c_BLUE] } },
@@ -332,24 +383,56 @@ void VisionWindow::drawBeacons(ImageWidget* image) {
     if(!object.seen) continue;
     if(object.fromTopCamera && _widgetAssignments[image] == Camera::BOTTOM) continue;
     if(!object.fromTopCamera && _widgetAssignments[image] == Camera::TOP) continue;
-    QPen tpen(beacon.second[0]), bpen(beacon.second[1]);
 
-    int width = cmatrix.getCameraWidthByDistance(object.visionDistance, 110);
-    int height = cmatrix.getCameraHeightByDistance(object.visionDistance, 100);
+    QColor c1, c2;
+    if(object.occlude){
+      c1 = beacon.second[0].dark(180);
+      c2 = beacon.second[1].dark(180);
+    }
+    else{
+      c1 = beacon.second[0];
+      c2 = beacon.second[1];
+    }
+    QPen tpen(c1), bpen(c2), textpen(segCol[c_UNDEFINED]);
+
+
+    int width = cmatrix.getCameraWidthByDistance(object.distance, 110);
+    int height = cmatrix.getCameraHeightByDistance(object.distance, 100);
+    int distance = object.visionDistance;
+    int distance2 = object.distance;
+
+    Position p = cmatrix.getWorldPosition(object.imageCenterX, object.imageCenterY);
+    int xc = p.x, yc = p.y, zc = p.z;
+
     int x1 = object.imageCenterX - width / 2;
+
+    auto ctop = cmatrix.getImageCoordinates(xc, yc, zc + 50);
+    auto cbottom = cmatrix.getImageCoordinates(xc, yc, zc - 50);
     
     // Draw top
     int ty1 = object.imageCenterY - height;
     QPainterPath tpath;
-    tpath.addRoundedRect(QRect(x1, ty1, width, height), 5, 5);
+    tpath.addRoundedRect(QRect(ctop.x - width/2, object.imageCenterY - height, width, height), 5, 5);
     painter.setPen(tpen);
-    painter.fillPath(tpath, QBrush(beacon.second[0]));
+    painter.fillPath(tpath, QBrush(c1));
 
     // Draw bottom
     int by1 = object.imageCenterY, by2 = object.imageCenterY + height;
     QPainterPath bpath;
-    bpath.addRoundedRect(QRect(x1, by1, width, height), 5, 5);
+    bpath.addRoundedRect(QRect(cbottom.x - width/2, object.imageCenterY, width, height), 5, 5);
     painter.setPen(bpen);
-    painter.fillPath(bpath, QBrush(beacon.second[1]));
+    painter.fillPath(bpath, QBrush(c2));
+
+    painter.setPen(textpen);
+    //painter.drawText(object.imageCenterX - width/2, object.imageCenterY - 10, to_string(distance).c_str());
+    painter.drawText(object.imageCenterX - width/2, object.imageCenterY + 10, to_string(distance2).c_str());
+  }
+  
+  for(int i=-5; i<=5; i++) {
+    int x = 1000, y = i * 100;
+    auto ca = cmatrix.getImageCoordinates(x, y, -1000);
+    auto cb = cmatrix.getImageCoordinates(x, y, 1000);
+    painter.drawLine(ca.x, ca.y, cb.x, cb.y);
+    //cout<<ca.x<<","<<ca.y<<" "<<cb.x<<","<<cb.y<<endl;
   }
 }

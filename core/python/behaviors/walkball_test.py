@@ -11,13 +11,20 @@ import cfgstiff
 from task import Task
 from state_machine import Node, C, T, StateMachine
 
-ptime = 0
 class Ready(Task):
     def run(self):
         commands.standStraight()
         if self.getTime() > 5.0:
             memory.speech.say("ready to play")
             self.finish()
+
+
+
+
+ptime = 0.0
+P = 0
+I = 0
+D = 0
 
 
 class Playing(StateMachine):
@@ -30,8 +37,37 @@ class Playing(StateMachine):
 
     class Walk(Node):
         def run(self):
-            ptime = self.getTime()
-            print('time: ', ptime)
+		global ptime, P, I, D
+		ball = mem_objects.world_objects[core.WO_BALL]
+
+		dtime = self.getTime() - ptime
+		ptime = self.getTime()
+
+		if ball.seen:
+		    bearing = ball.visionBearing
+		    distance = ball.visionDistance
+		    print(dtime, bearing, distance)
+
+		    T = 0
+		    V = distance
+		    
+		    preP = P
+		    P = T - V
+		    I = I + P
+		    D = P - preP
+
+		    C = -0.5*P/1000
+		    print(C)
+
+		    if C > 0.5:
+		        C = 0.5
+		    if C < 0:
+		        C = 0
+		    #commands.setWalkVelocity(C, 0, 0)
+	       
+		
+		    if distance < 300:
+		        self.finish()
 
     class Off(Node):
         def run(self):

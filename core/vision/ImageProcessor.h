@@ -30,6 +30,7 @@ class ImageProcessor {
     std::unique_ptr<Classifier> color_segmenter_;
     unsigned char* getImg();
     unsigned char* getSegImg();
+    int* getGSegImg();
     unsigned char* getColorTable();
     bool isRawImageLoaded();
     int getImageHeight();
@@ -42,8 +43,20 @@ class ImageProcessor {
     std::vector<BallCandidate*> getBallCandidates();
     BallCandidate* getBestBallCandidate();
     bool isImageLoaded();
+
+    void omi();
+    void buildBlobs();
+    void processBallCandidates();
+    void processBeaconCandidates();
+    void processGoalCandidates();
+
     void detectBall();
     void findBall(int& imageX, int& imageY);
+    void detectGoal();
+    void findGoal(int& imageX, int& imageY, double& area);
+    
+    int gw, gh;
+
   private:
     int getTeamColor();
     double getCurrentTime();
@@ -67,6 +80,16 @@ class ImageProcessor {
     //void saveImg(std::string filepath);
     int topFrameCounter_ = 0;
     int bottomFrameCounter_ = 0;
+
+    std::vector<BallCandidate> ballCandidates;
+    std::vector<BallCandidate> beaconCandidates;
+    std::vector<BallCandidate> goalCandidates;
+    std::vector<pair<int,int>> beaconPairs;
+    std::vector<int> excludeBeacon;
+
+    int gseg_top[100000], gseg_bottom[100000];
+
+
 };
 
 #endif
