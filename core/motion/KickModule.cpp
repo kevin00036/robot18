@@ -175,4 +175,12 @@ void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& fin
     cache_.joint_command->setSendAllAngles(true, finish.frames * 10);
     cache_.joint_command->setPoseRad(finish.joints.data());
   }
+
+  for(int i = 0; i < finish.joints.size(); i++) {
+    if(cache_.joint_command->stiffness_[i] < 0.1) {
+      cache_.joint_command->angles_[i] = cache_.joint->values_[i];
+      cache_.joint_command->setSendAllAngles(true, 300);
+      printf("omi\n");
+    }
+  }
 }
