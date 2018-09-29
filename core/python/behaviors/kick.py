@@ -20,6 +20,7 @@ class Playing(StateMachine):
 
     class Kick(Node):
         def run(self):
+            print('kick kick kick')
             if self.getFrames() <= 3:
                 memory.walk_request.noWalk()
                 memory.kick_request.setFwdKick()
