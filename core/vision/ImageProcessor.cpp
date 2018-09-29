@@ -138,6 +138,7 @@ void ImageProcessor::processFrame(){
   excludeBeacon.clear();
   beaconPairs.clear();
   //omi();
+  return;
   buildBlobs();
 
   processBeaconCandidates();

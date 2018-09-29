@@ -14,9 +14,17 @@ from state_machine import Node, C, T, StateMachine
 ptime = 0
 class Ready(Task):
     def run(self):
-        commands.standStraight()
+        commands.setStiffness()       #commands.standStraight()
         if self.getTime() > 5.0:
             memory.speech.say("ready to play")
+            self.finish()
+
+class Set(Task):
+    def run(self):
+        commands.setStiffness(cfgstiff.Zero)
+        if self.getTime() > 5.0:
+            memory.speech.say("Set stiffness to Hong-Shi")
+            print('Set Stiffness Hong-Shi')
             self.finish()
 
 
@@ -35,9 +43,11 @@ class Playing(StateMachine):
 
     class Off(Node):
         def run(self):
+            print('Omi', self.getTime())
             commands.setStiffness(cfgstiff.Zero)
             if self.getTime() > 2.0:
                 memory.speech.say("turned off stiffness")
+                print('OMIFINISH')
                 self.finish()
 
     def setup(self):
@@ -45,4 +55,4 @@ class Playing(StateMachine):
         walk = self.Walk()
         sit = pose.Sit()
         off = self.Off()
-        self.trans(stand, C, walk, T(5.0), sit, C, off)
+        self.trans(stand, C, walk, T(2.0), off, C)
