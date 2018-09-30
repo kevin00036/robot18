@@ -84,6 +84,7 @@ void KickModule::specifyMemoryDependency() {
   requiresMemoryBlock("processed_sensors");
   requiresMemoryBlock("body_model");
   requiresMemoryBlock("kick_request");
+  //requiresMemoryBlock("raw_sensors");
 }
 
 void KickModule::specifyMemoryBlocks() {
@@ -96,9 +97,32 @@ void KickModule::specifyMemoryBlocks() {
   getMemoryBlock(cache_.sensor,"processed_sensors");
   getMemoryBlock(cache_.body_model,"body_model");
   getMemoryBlock(cache_.kick_request,"kick_request");
+  //getMemoryBlock(cache_.sensors_,"raw_sensors");
 }
 
+double forcediff_left;
+double forcediff_diff;
+//double pastdiff[6];
+double anglex;
+double anglexvel;
+
 void KickModule::processFrame() {
+  //cout<<cache_.sensor->angleXVel<<endl;
+  //cout<<cache_.sensor->fsr_feet_<<"\t"<<cache_.sensor->fsr_left_side_<<endl;
+  
+  double cur_force = cache_.sensor->fsr_left_side_;
+  //for(int i=5; i>=0; i--)
+    //pastdiff[i] = pastdiff[i-1];
+  //passdiff[0] = cur_force;
+
+  double g1 = 0.8, g2 = 0.8;
+  forcediff_diff = g1 * forcediff_diff + (1-g1) * (cur_force - forcediff_left);
+  forcediff_left = g1 * forcediff_left + (1-g1) * cur_force;
+  anglexvel = g2 * anglexvel + (1-g2) * cache_.sensor->angleXVel;
+  anglex = g2 * anglex + (1-g2) * cache_.sensor->values_[angleX];
+  cout<<"Forcediff = "<<forcediff_left<<" delta "<<forcediff_diff<<endl;
+  cout<<"AngleXVel = "<<anglexvel<<endl;
+  cout<<"AngleX = "<<anglex<<endl;
   if(cache_.kick_request->kick_type_ == Kick::STRAIGHT) {
     if(state_ == Finished) start();
   }
@@ -118,6 +142,8 @@ void KickModule::initStiffness() {
 }
 
 void KickModule::performKick() {
+  if(frames_ == 0)
+    initStiffness();
   if(DEBUG) printf("performKick, state: %s, keyframe: %i, frames: %i\n", getName(state_), keyframe_, frames_);
   if(state_ == Finished) return;
   if(sequence_ == NULL) return;
@@ -131,7 +157,6 @@ void KickModule::performKick() {
       state_ = Running;
       frames_ = 0;
     } else {
-      initStiffness();
       moveToInitial(keyframe, frames_);
     }
   }
@@ -141,7 +166,10 @@ void KickModule::performKick() {
       return;
     }
     auto& next = sequence_->keyframes[keyframe_ + 1];
-    if(frames_ >= next.frames) {
+    int frame_num = next.frames;
+    if(frame_num == 3000)
+      frame_num = 100000;
+    if(frames_ >= frame_num) {
       keyframe_++;
       frames_ = 0;
       performKick();
@@ -166,15 +194,45 @@ void KickModule::moveToInitial(const Keyframe& keyframe, int cframe) {
   moveBetweenKeyframes(*initial_, keyframe, cframe);
 }
 
+double lastz = 0;
+
 void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& finish, int cframe) {
-  if(cframe == 0) {
-    if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", finish.frames * 10);
-    for(int i = 0; i < finish.joints.size(); i++)
-      if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
-    if(DEBUG) printf("\n");
-    cache_.joint_command->setSendAllAngles(true, finish.frames * 10);
-    cache_.joint_command->setPoseRad(finish.joints.data());
-  }
+  //if(cframe == 0) {
+    //int frame_num = finish.frames;
+    //if (frame_num >= 3000)
+      //frame_num = 100000;
+    //if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
+    //for(int i = 0; i < finish.joints.size(); i++)
+      //if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
+    //if(DEBUG) printf("\n");
+    //cache_.joint_command->setSendAllAngles(true, frame_num * 10);
+    //cache_.joint_command->setPoseRad(finish.joints.data());
+  //}
+
+  int frame_num = finish.frames;
+  if (frame_num >= 3000)
+    frame_num = 100000;
+  if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
+  for(int i = 0; i < finish.joints.size(); i++)
+    if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
+  if(DEBUG) printf("\n");
+  float t = (float)(cframe+1) / frame_num;
+  auto cjoints = start.joints;
+  for(int i = 0; i < finish.joints.size(); i++)
+    cjoints[i] = start.joints[i] * (1-t) + finish.joints[i] * t;
+
+  double forcediff_left = cache_.sensor->fsr_left_side_;
+  double anglexvel = cache_.sensor->angleXVel;
+  cout<<"Forcediff = "<<forcediff_left<<endl;
+  cout<<"AngleXVel = "<<anglexvel<<endl;
+  cjoints[LAnkleRoll] += (1.5 * forcediff_left - 3 * anglexvel) * DEG_T_RAD;
+  cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
+  //cjoints[LHipRoll] += 2 * forcediff_left * DEG_T_RAD;
+
+  cache_.joint_command->setSendAllAngles(true, 1 * 10);
+  cache_.joint_command->setPoseRad(cjoints.data());
+
+  initStiffness();
 
   bool resend = false;
 
