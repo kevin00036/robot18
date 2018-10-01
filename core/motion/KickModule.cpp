@@ -10,7 +10,7 @@
 #include <memory/KickRequestBlock.h>
 
 #define JOINT_EPSILON (3.f * DEG_T_RAD)
-#define DEBUG false
+#define DEBUG true
 #define HACK
 
 KickModule::KickModule() : state_(Finished), sequence_(NULL) { }
@@ -118,7 +118,6 @@ void KickModule::initStiffness() {
 }
 
 void KickModule::performKick() {
-  initStiffness();
   if(DEBUG) printf("performKick, state: %s, keyframe: %i, frames: %i\n", getName(state_), keyframe_, frames_);
   if(state_ == Finished) return;
   if(sequence_ == NULL) return;
@@ -132,6 +131,7 @@ void KickModule::performKick() {
       state_ = Running;
       frames_ = 0;
     } else {
+      initStiffness();
       moveToInitial(keyframe, frames_);
     }
   }
@@ -176,11 +176,22 @@ void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& fin
     cache_.joint_command->setPoseRad(finish.joints.data());
   }
 
+  bool resend = false;
+
   for(int i = 0; i < finish.joints.size(); i++) {
     if(cache_.joint_command->stiffness_[i] < 0.1) {
-      cache_.joint_command->angles_[i] = cache_.joint->values_[i];
-      cache_.joint_command->setSendAllAngles(true, 300);
-      printf("omi\n");
+      resend = true;
     }
+  }
+
+  if (resend) {
+      printf("omi resend\n");
+      cache_.joint_command->setSendAllAngles(true, 300);
+      for(int i = 0; i < finish.joints.size(); i++) {
+        if(cache_.joint_command->stiffness_[i] < 0.1)
+          cache_.joint_command->angles_[i] = cache_.joint->values_[i];
+        else
+          cache_.joint_command->angles_[i] = nanf("");
+      }
   }
 }

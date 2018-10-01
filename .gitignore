@@ -21,3 +21,4 @@ logs*
 *.o
 *.pyo
 *.pyc
+submit
