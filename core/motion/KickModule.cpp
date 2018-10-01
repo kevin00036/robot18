@@ -197,52 +197,30 @@ void KickModule::moveToInitial(const Keyframe& keyframe, int cframe) {
 double lastz = 0;
 
 void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& finish, int cframe) {
-  //if(cframe == 0) {
-    //int frame_num = finish.frames;
-    //if (frame_num >= 3000)
-      //frame_num = 100000;
-    //if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
-    //for(int i = 0; i < finish.joints.size(); i++)
-      //if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
-    //if(DEBUG) printf("\n");
-    //cache_.joint_command->setSendAllAngles(true, frame_num * 10);
-    //cache_.joint_command->setPoseRad(finish.joints.data());
-  //}
+  bool USE_PID = false;
 
-  int frame_num = finish.frames;
-  if (frame_num >= 3000)
-    frame_num = 100000;
-  if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
-  for(int i = 0; i < finish.joints.size(); i++)
-    if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
-  if(DEBUG) printf("\n");
-  float t = (float)(cframe+1) / frame_num;
-  auto cjoints = start.joints;
-  for(int i = 0; i < finish.joints.size(); i++)
-    cjoints[i] = start.joints[i] * (1-t) + finish.joints[i] * t;
-
-  double forcediff_left = cache_.sensor->fsr_left_side_;
-  double anglexvel = cache_.sensor->angleXVel;
-  cout<<"Forcediff = "<<forcediff_left<<endl;
-  cout<<"AngleXVel = "<<anglexvel<<endl;
-  cjoints[LAnkleRoll] += (1.5 * forcediff_left - 3 * anglexvel) * DEG_T_RAD;
-  cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
-  //cjoints[LHipRoll] += 2 * forcediff_left * DEG_T_RAD;
-
-  cache_.joint_command->setSendAllAngles(true, 1 * 10);
-  cache_.joint_command->setPoseRad(cjoints.data());
-
-  initStiffness();
-
-  bool resend = false;
-
-  for(int i = 0; i < finish.joints.size(); i++) {
-    if(cache_.joint_command->stiffness_[i] < 0.1) {
-      resend = true;
+  if(!USE_PID) {
+    if(cframe == 0) {
+      int frame_num = finish.frames;
+      if (frame_num >= 3000)
+        frame_num = 100000;
+      if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
+      for(int i = 0; i < finish.joints.size(); i++)
+        if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
+      if(DEBUG) printf("\n");
+      cache_.joint_command->setSendAllAngles(true, frame_num * 10);
+      cache_.joint_command->setPoseRad(finish.joints.data());
     }
-  }
 
-  if (resend) {
+    bool resend = false;
+
+    for(int i = 0; i < finish.joints.size(); i++) {
+      if(cache_.joint_command->stiffness_[i] < 0.1) {
+        resend = true;
+      }
+    }
+
+    if (resend) {
       printf("omi resend\n");
       cache_.joint_command->setSendAllAngles(true, 300);
       for(int i = 0; i < finish.joints.size(); i++) {
@@ -251,5 +229,32 @@ void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& fin
         else
           cache_.joint_command->angles_[i] = nanf("");
       }
+    }
+  }
+  else {
+    int frame_num = finish.frames;
+    if (frame_num >= 3000)
+      frame_num = 100000;
+    if(DEBUG) printf("moving between keyframes, time: %i, joints:\n", frame_num * 10);
+    for(int i = 0; i < finish.joints.size(); i++)
+      if(DEBUG) printf("j[%i]:%2.2f,", i, finish.joints[i] * RAD_T_DEG);
+    if(DEBUG) printf("\n");
+    float t = (float)(cframe+1) / frame_num;
+    auto cjoints = start.joints;
+    for(int i = 0; i < finish.joints.size(); i++)
+      cjoints[i] = start.joints[i] * (1-t) + finish.joints[i] * t;
+
+    double forcediff_left = cache_.sensor->fsr_left_side_;
+    double anglexvel = cache_.sensor->angleXVel;
+    cout<<"Forcediff = "<<forcediff_left<<endl;
+    cout<<"AngleXVel = "<<anglexvel<<endl;
+    cjoints[LAnkleRoll] += (1.5 * forcediff_left - 3 * anglexvel) * DEG_T_RAD;
+    cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
+    //cjoints[LHipRoll] += 2 * forcediff_left * DEG_T_RAD;
+
+    cache_.joint_command->setSendAllAngles(true, 1 * 10);
+    cache_.joint_command->setPoseRad(cjoints.data());
+
+    initStiffness();
   }
 }
