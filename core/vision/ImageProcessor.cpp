@@ -141,7 +141,7 @@ void ImageProcessor::processFrame(){
   //return;
   buildBlobs();
 
-  processBeaconCandidates();
+  //processBeaconCandidates();
   processBallCandidates();
   processGoalCandidates();
 
@@ -290,14 +290,18 @@ void ImageProcessor::omi() {
   tlog(30, "omi time: %.4fs", tm);
 }
 
+int Q[320*240];
+
 void ImageProcessor::buildBlobs() {
   long long start = clock();
   int W = iparams_.width, H = iparams_.height;
   bool vis[H][W] = {};
   const int dx[4] = {1, -1, 0, 0};
   const int dy[4] = {0, 0, 1, -1};
-  int Q[H*W];
   int ql = 0, qr = 0;
+  int xcnt[W] = {};
+  int xcnt_usedx[W] = {}, xcnt_tmp[W] = {};
+  int xcnt_usedxcnt = 0;
 
   int blobCount = 0;
 
@@ -314,9 +318,7 @@ void ImageProcessor::buildBlobs() {
       int ymin = H, ymax = 0, xmin = W, xmax = 0;
       int avgx = 0, avgy = 0;
 
-      //////////////////////////
-      vector< pair <int,int> > pixels;
-      //////////////////////////
+      //vector<pair<int,int>> pixels;
 
       while(ql != qr)
       {
@@ -324,8 +326,12 @@ void ImageProcessor::buildBlobs() {
         ql++;
 
         //getGSegImg()[y * W + x] = blobIdx;
-        ////////////////////////////
-        pixels.push_back({x, y});
+
+        //pixels.push_back({x, y});
+        if(!xcnt[x]) {
+          xcnt_usedx[xcnt_usedxcnt++] = x;
+        }
+        xcnt[x]++;
 
         ymin = min(ymin, y);
         ymax = max(ymax, y);
@@ -372,6 +378,7 @@ void ImageProcessor::buildBlobs() {
         //tlog(30, "Color %d Size %d [%d~%d] x [%d~%d] Density %.3f", clr, blobSize, xmin, xmax, ymin, ymax, density);
 
       //beacon
+      if(0)
       if(blobSize >= 15 and (clr == c_YELLOW or clr == c_BLUE or clr == c_PINK)) {
         auto bc = BallCandidate();
         //bc.centerX = (xmin + xmax) / 2;
@@ -400,6 +407,7 @@ void ImageProcessor::buildBlobs() {
 
       //goal
       //if(blobSize >= 2000 and clr == c_BLUE) {
+      //if(0)
       if(blobSize >= 500 and clr == c_BLUE) {
 
         auto bc = BallCandidate();
@@ -418,33 +426,42 @@ void ImageProcessor::buildBlobs() {
 
 
         if(density >= 0.4 and aspect_ratio > 0.2 and aspect_ratio < 5) {
-          sort(pixels.begin(), pixels.end());
-          vector<int> counter;
-          int curx = -1, sumx = -1;
-          for(int p=0;p<pixels.size();p++){
-            int haox = pixels[p].first;
-            int haoy = pixels[p].second;
+          for(int i=0; i<xcnt_usedxcnt; i++)
+            xcnt_tmp[i] = xcnt[xcnt_usedx[i]];
+          int pos = xcnt_usedxcnt / 2;
+          nth_element(xcnt_tmp, xcnt_tmp + pos, xcnt_tmp + xcnt_usedxcnt);
+          int midh = xcnt_tmp[pos] / 2;
 
-            if(haox!=curx){
-              if(sumx!=-1) counter.push_back(sumx);
-              curx = haox;
-              sumx = 1;
-            }
-            else
-              sumx += 1;
-          }
-          for(int p=0;p<counter.size();p++){
-            //cout<< counter[p]<<endl;
-          }
-          sort(counter.begin(), counter.end());
-          //cout<<centerY<<"  "<<counter[round(counter.size()/2)]<<endl;
-          double midh = 0;
-          if(!counter.empty())
-            midh = counter.at(counter.size()/2)/2;
+          //sort(pixels.begin(), pixels.end());
+          //vector<int> counter;
+          //int curx = -1, sumx = -1;
+          //for(int p=0;p<pixels.size();p++){
+            //int haox = pixels[p].first;
+            //int haoy = pixels[p].second;
+
+            //if(haox!=curx){
+              //if(sumx!=-1) counter.push_back(sumx);
+              //curx = haox;
+              //sumx = 1;
+            //}
+            //else
+              //sumx += 1;
+          //}
+          //sort(counter.begin(), counter.end());
+
+          //double midh = 0;
+          //if(!counter.empty())
+            //midh = counter.at(counter.size()/2)/2;
           bc.midh = midh;
           goalCandidates.push_back(bc);
+          //cout<<"GOAL GOOD "<<xcnt_usedxcnt<<" Diff Xs, Mid Height "<<zmidh<<" Orig "<<midh<<endl;
         }
       }
+
+      // Clear xcnt
+      for (int i=0; i<xcnt_usedxcnt; i++)
+        xcnt[xcnt_usedx[i]] = 0;
+      xcnt_usedxcnt = 0;
     }
   }
 
@@ -794,90 +811,90 @@ void ImageProcessor::buildBlobs() {
     }
 
     void ImageProcessor::detectGoal() {
-      if(camera_ == Camera::BOTTOM)
-        return;
+      //if(camera_ == Camera::BOTTOM)
+        //return;
 
-      int imageX, imageY;
-      double area;
-      findGoal(imageX, imageY, area);
-      if (imageX == -1) return; // function defined elsewhere that fills in imageX, imageY by reference
-      WorldObject* goal = &vblocks_.world_object->objects_[WO_OWN_GOAL];
+      //int imageX, imageY;
+      //double area;
+      //findGoal(imageX, imageY, area);
+      //if (imageX == -1) return; // function defined elsewhere that fills in imageX, imageY by reference
+      //WorldObject* goal = &vblocks_.world_object->objects_[WO_OWN_GOAL];
 
-      goal->imageCenterX = imageX;
-      goal->imageCenterY = imageY;
+      //goal->imageCenterX = imageX;
+      //goal->imageCenterY = imageY;
 
-      Position p = cmatrix_.getWorldPosition(imageX, imageY, 280);
-      goal->visionBearing = cmatrix_.bearing(p);
-      goal->visionElevation = cmatrix_.elevation(p);
-      //goal->visionDistance = area;
-      goal->visionDistance = cmatrix_.groundDistance(p);
-      goal->fromTopCamera = camera_ == Camera::TOP;
+      //Position p = cmatrix_.getWorldPosition(imageX, imageY, 280);
+      //goal->visionBearing = cmatrix_.bearing(p);
+      //goal->visionElevation = cmatrix_.elevation(p);
+      ////goal->visionDistance = area;
+      //goal->visionDistance = cmatrix_.groundDistance(p);
+      //goal->fromTopCamera = camera_ == Camera::TOP;
 
-      goal->seen = true;
+      //goal->seen = true;
     }
 
     void ImageProcessor::findGoal(int& imageX, int& imageY, double& area) {
-      imageX = imageY = -1;
+      //imageX = imageY = -1;
 
-      int total = 0;
-      int sumx = 0, sumy = 0;
-      int step = iparams_.width / 320; 
+      //int total = 0;
+      //int sumx = 0, sumy = 0;
+      //int step = iparams_.width / 320; 
 
-      int W = iparams_.width / step, H = iparams_.height / step;
+      //int W = iparams_.width / step, H = iparams_.height / step;
 
-      int xcnt[W] = {};
-      int ycnt[H] = {};
+      //int xcnt[W] = {};
+      //int ycnt[H] = {};
 
-      // Process from left to right
-      for(int x = 0; x < iparams_.width; x+=step) {
-        // Process from top to bottom
-        for(int y = 0; y < iparams_.height; y+=step) {
-          // Retrieve the segmented color of the pixel at (x,y)
-          auto c = getSegImg()[y * iparams_.width + x];
-          if(c == c_BLUE)
-          {
-            total++;
-            sumx += x;
-            sumy += y;
-            xcnt[x/step]++;
-            ycnt[y/step]++;
-          }
-        }
-      }
+      //// Process from left to right
+      //for(int x = 0; x < iparams_.width; x+=step) {
+        //// Process from top to bottom
+        //for(int y = 0; y < iparams_.height; y+=step) {
+          //// Retrieve the segmented color of the pixel at (x,y)
+          //auto c = getSegImg()[y * iparams_.width + x];
+          //if(c == c_BLUE)
+          //{
+            //total++;
+            //sumx += x;
+            //sumy += y;
+            //xcnt[x/step]++;
+            //ycnt[y/step]++;
+          //}
+        //}
+      //}
 
-      double ratio = (double) total / ((iparams_.width/step) * (iparams_.height/step));
-      if (ratio > 0.02)
-      {
-        imageX = sumx / total;
-        imageY = sumy / total;
+      //double ratio = (double) total / ((iparams_.width/step) * (iparams_.height/step));
+      //if (ratio > 0.02)
+      //{
+        //imageX = sumx / total;
+        //imageY = sumy / total;
 
-        int xmin = -1, xmax = -1, ymin = -1, ymax = -1;
-        int lth = 0.05 * total, rth = 0.95 * total;
-        int cur = 0;
-        for(int i=0; i<W; i++)
-        {
-          int ncur = cur + xcnt[i];
-          if(cur < lth and ncur >= lth)
-            xmin = i;
-          if(cur < rth and ncur >= rth)
-            xmax = i;
-          cur = ncur;
-        }
-        cur = 0;
-        for(int i=0; i<H; i++)
-        {
-          int ncur = cur + ycnt[i];
-          if(cur < lth and ncur >= lth)
-            ymin = i;
-          if(cur < rth and ncur >= rth)
-            ymax = i;
-          cur = ncur;
-        }
+        //int xmin = -1, xmax = -1, ymin = -1, ymax = -1;
+        //int lth = 0.05 * total, rth = 0.95 * total;
+        //int cur = 0;
+        //for(int i=0; i<W; i++)
+        //{
+          //int ncur = cur + xcnt[i];
+          //if(cur < lth and ncur >= lth)
+            //xmin = i;
+          //if(cur < rth and ncur >= rth)
+            //xmax = i;
+          //cur = ncur;
+        //}
+        //cur = 0;
+        //for(int i=0; i<H; i++)
+        //{
+          //int ncur = cur + ycnt[i];
+          //if(cur < lth and ncur >= lth)
+            //ymin = i;
+          //if(cur < rth and ncur >= rth)
+            //ymax = i;
+          //cur = ncur;
+        //}
 
-        //area = ratio;
-        area = (double)((xmax - xmin) * (ymax - ymin)) / (W*H);
-        //cout<<"["<<xmin*100/W<<"~"<<xmax*100/W<<"] x ["<<ymin*100/H<<"~"<<ymax*100/H<<"]"<<endl;
-      }
+        ////area = ratio;
+        //area = (double)((xmax - xmin) * (ymax - ymin)) / (W*H);
+        ////cout<<"["<<xmin*100/W<<"~"<<xmax*100/W<<"] x ["<<ymin*100/H<<"~"<<ymax*100/H<<"]"<<endl;
+      //}
     }
 
 
