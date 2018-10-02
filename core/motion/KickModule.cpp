@@ -22,7 +22,7 @@ void KickModule::initSpecificModule() {
   // to load the kick on demand. Since kicks load quickly and happen
   // relatively infrequently this should not add too much overhead to the kick
   // behavior.
-  auto file = cache_.memory->data_path_ + "/kicks/default.yaml";
+  auto file = cache_.memory->data_path_ + "/kicks/kick2.yaml";
   sequence_ = new KeyframeSequence();
   printf("Loading kick sequence from '%s'...", file.c_str());
   fflush(stdout);
@@ -43,7 +43,7 @@ void KickModule::start() {
   cache_.kick_request->kick_running_ = true;
   keyframe_ = 0;
   frames_ = 0;
-  auto file = cache_.memory->data_path_ + "/kicks/default.yaml";
+  auto file = cache_.memory->data_path_ + "/kicks/kick2.yaml";
   #ifdef HACK
   sequence_ = new KeyframeSequence();
   printf("Loading kick sequence from '%s'...", file.c_str());
@@ -100,7 +100,7 @@ void KickModule::specifyMemoryBlocks() {
   //getMemoryBlock(cache_.sensors_,"raw_sensors");
 }
 
-double forcediff_left;
+double forcediff_left, forcediff_lr;
 double forcediff_diff;
 //double pastdiff[6];
 double anglex;
@@ -118,9 +118,11 @@ void KickModule::processFrame() {
   double g1 = 0.8, g2 = 0.8;
   forcediff_diff = g1 * forcediff_diff + (1-g1) * (cur_force - forcediff_left);
   forcediff_left = g1 * forcediff_left + (1-g1) * cur_force;
+  forcediff_lr = g1 * forcediff_lr + (1-g1) * cache_.sensor->fsr_feet_;
   anglexvel = g2 * anglexvel + (1-g2) * cache_.sensor->angleXVel;
   anglex = g2 * anglex + (1-g2) * cache_.sensor->values_[angleX];
-  cout<<"Forcediff = "<<forcediff_left<<" delta "<<forcediff_diff<<endl;
+  cout<<"Forcediff_leftx = "<<forcediff_left<<" delta "<<forcediff_diff<<endl;
+  cout<<"Forcediff_lr = "<<forcediff_lr<<endl;
   cout<<"AngleXVel = "<<anglexvel<<endl;
   cout<<"AngleX = "<<anglex<<endl;
   if(cache_.kick_request->kick_type_ == Kick::STRAIGHT) {
@@ -197,7 +199,8 @@ void KickModule::moveToInitial(const Keyframe& keyframe, int cframe) {
 double lastz = 0;
 
 void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& finish, int cframe) {
-  bool USE_PID = false;
+  bool USE_PID = true;
+  //USE_PID = false;
 
   if(!USE_PID) {
     if(cframe == 0) {
@@ -249,7 +252,7 @@ void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& fin
     cout<<"Forcediff = "<<forcediff_left<<endl;
     cout<<"AngleXVel = "<<anglexvel<<endl;
     cjoints[LAnkleRoll] += (1.5 * forcediff_left - 3 * anglexvel) * DEG_T_RAD;
-    cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
+    //cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
     //cjoints[LHipRoll] += 2 * forcediff_left * DEG_T_RAD;
 
     cache_.joint_command->setSendAllAngles(true, 1 * 10);
