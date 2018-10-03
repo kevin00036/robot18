@@ -10,7 +10,7 @@
 #include <memory/KickRequestBlock.h>
 
 #define JOINT_EPSILON (3.f * DEG_T_RAD)
-#define DEBUG true
+#define DEBUG false
 #define HACK
 
 KickModule::KickModule() : state_(Finished), sequence_(NULL) { }
@@ -121,10 +121,10 @@ void KickModule::processFrame() {
   forcediff_lr = g1 * forcediff_lr + (1-g1) * cache_.sensor->fsr_feet_;
   anglexvel = g2 * anglexvel + (1-g2) * cache_.sensor->angleXVel;
   anglex = g2 * anglex + (1-g2) * cache_.sensor->values_[angleX];
-  cout<<"Forcediff_leftx = "<<forcediff_left<<" delta "<<forcediff_diff<<endl;
-  cout<<"Forcediff_lr = "<<forcediff_lr<<endl;
-  cout<<"AngleXVel = "<<anglexvel<<endl;
-  cout<<"AngleX = "<<anglex<<endl;
+  //cout<<"Forcediff_leftx = "<<forcediff_left<<" delta "<<forcediff_diff<<endl;
+  //cout<<"Forcediff_lr = "<<forcediff_lr<<endl;
+  //cout<<"AngleXVel = "<<anglexvel<<endl;
+  //cout<<"AngleX = "<<anglex<<endl;
   if(cache_.kick_request->kick_type_ == Kick::STRAIGHT) {
     if(state_ == Finished) start();
   }
@@ -136,7 +136,6 @@ void KickModule::processFrame() {
 
 
 void KickModule::initStiffness() {
-
   for (int i=0; i < NUM_JOINTS; i++)
     cache_.joint_command->stiffness_[i] = 1.0;
   cache_.joint_command->send_stiffness_ = true;
@@ -249,8 +248,8 @@ void KickModule::moveBetweenKeyframes(const Keyframe& start, const Keyframe& fin
 
     double forcediff_left = cache_.sensor->fsr_left_side_;
     double anglexvel = cache_.sensor->angleXVel;
-    cout<<"Forcediff = "<<forcediff_left<<endl;
-    cout<<"AngleXVel = "<<anglexvel<<endl;
+    //cout<<"Forcediff = "<<forcediff_left<<endl;
+    //cout<<"AngleXVel = "<<anglexvel<<endl;
     cjoints[LAnkleRoll] += (1.5 * forcediff_left - 3 * anglexvel) * DEG_T_RAD;
     //cjoints[LShoulderRoll] -= (1.5 * forcediff_left + 3 * forcediff_diff) * DEG_T_RAD;
     //cjoints[LHipRoll] += 2 * forcediff_left * DEG_T_RAD;

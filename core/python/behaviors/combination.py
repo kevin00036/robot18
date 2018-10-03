@@ -39,6 +39,8 @@ dI = 0
 dD = 0
 
 stage_flag = 0
+kick_frame = 0
+finish_time = 0
 
 
 def reset_params():
@@ -65,15 +67,18 @@ def print_flag(stage_flag):
         print('4 walk goal')
     elif stage_flag == 5:
         print('5 align')
+    elif stage_flag == 6:
+        print('6 kick', kick_frame)
     else:
         print('9 finish!!!')
 
 class Playing(Task):
     def run(self):
-        global ptime, P, I, D, aP, aI, aD, dP, dI, dD, stage_flag, WDIS
+        global ptime, P, I, D, aP, aI, aD, dP, dI, dD, stage_flag, WDIS, kick_frame, finish_time
         print_flag(stage_flag)
     
-    
+        commands.setStiffness()
+        # Find ball
         if stage_flag == 0:
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
             if not ball.seen:
@@ -82,6 +87,7 @@ class Playing(Task):
                 commands.setWalkVelocity(0, 0, 0)
                 stage_flag = 1
     
+        # Walk ball
         if stage_flag == 1:
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
             dtime = self.getTime() - ptime
@@ -134,6 +140,7 @@ class Playing(Task):
                     stage_flag = 3
     
     
+        # Find goal
         if stage_flag == 2:
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
             dtime = self.getTime() - ptime
@@ -187,6 +194,7 @@ class Playing(Task):
                 stage_flag = 3
     
     
+        # Face goal
         if stage_flag == 3:
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
             goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
@@ -261,6 +269,7 @@ class Playing(Task):
     
     
     
+        # Walk goal
         if stage_flag == 4:
             goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
@@ -334,6 +343,7 @@ class Playing(Task):
             else:
                 commands.setWalkVelocity(C, 0, aC)
 
+        # Align
         if stage_flag == 5:
             ball = memory.world_objects.getObjPtr(core.WO_BALL)
             goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
@@ -402,12 +412,25 @@ class Playing(Task):
             if abs(dV - dT) < 0.05 and V < 150 + 5:
                 commands.setWalkVelocity(0, 0, 0)
                 reset_params()
-                stage_flag = 9
-                # print('Good!!!!!')
+                stage_flag = 6
+                kick_frame = 0
             else:
                 commands.setWalkVelocity(C, dC, aC)
                 print(C, dC, aC, 'XD', V, dV, aV)
     
+        # Kick
+        if stage_flag == 6:
+            if kick_frame <= 3:
+                memory.walk_request.noWalk()
+                memory.kick_request.setFwdKick()
+            if kick_frame > 10 and not memory.kick_request.kick_running_:
+                stage_flag = 9
+                finish_time = self.getTime()
+            kick_frame += 1
+
+        # Finish
         if stage_flag == 9:
-            stage_flag = 0
-            self.finish()
+            commands.stand()
+            if self.getTime() - finish_time >= 1:
+                stage_flag = 0
+                self.finish()

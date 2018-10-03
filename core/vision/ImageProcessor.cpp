@@ -357,7 +357,7 @@ void ImageProcessor::buildBlobs() {
       int boundingBoxArea = (ymax - ymin + 1) * (xmax - xmin + 1);
       double density = blobSize / (double) boundingBoxArea;
 
-
+      //ball
       if(blobSize >= 10 and clr == c_ORANGE) {
         auto bc = BallCandidate();
         bc.centerX = (xmin + xmax) / 2;
@@ -784,6 +784,16 @@ void ImageProcessor::buildBlobs() {
 
         new_cands.push_back(bc);
       }
+
+      if(!new_cands.empty()) {
+        int max_idx = -1;
+        for(int i=0; i<(int)new_cands.size(); i++) {
+          if(max_idx == -1 or (new_cands[i].radius > new_cands[max_idx].radius))
+            max_idx = i;
+        }
+        swap(new_cands[0], new_cands[max_idx]);
+      }
+
       ballCandidates = new_cands;
     }
 
@@ -792,12 +802,13 @@ void ImageProcessor::buildBlobs() {
       if (ballCandidates.empty()) return;
       WorldObject* ball = &vblocks_.world_object->objects_[WO_BALL];
       BallCandidate &bc = ballCandidates[0];
+      if(ball and ball->seen and (ball->radius > bc.radius)) return;
 
       ball->imageCenterX = bc.centerX;
       ball->imageCenterY = bc.centerY;
 
-      //Position p = cmatrix_.getWorldPosition(imageX, imageY, 50);
       Position p = bc.relPosition;
+      //Position p = cmatrix_.getWorldPosition(imageX, imageY, 50);
       ball->visionBearing = cmatrix_.bearing(p);
       ball->visionElevation = cmatrix_.elevation(p);
       ball->visionDistance = cmatrix_.groundDistance(p);
