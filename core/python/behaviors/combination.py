@@ -408,3 +408,6 @@ class Playing(Task):
                 commands.setWalkVelocity(C, dC, aC)
                 print(C, dC, aC, 'XD', V, dV, aV)
     
+        if stage_flag == 9:
+            stage_flag = 0
+            self.finish()
