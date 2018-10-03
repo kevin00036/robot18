@@ -336,7 +336,7 @@ class Playing(Task):
                 commands.setWalkVelocity(0, 0, 0)
                 reset_params()  
                 stage_flag = 1
-            elif goal.distance < 1300 and ball.visionDistance < WDIS and abs(goal.visionBearing) < 0.15 and abs(ball.visionBearing) < 0.15:
+            elif goal.distance < 1100 and ball.visionDistance < WDIS and abs(goal.visionBearing) < 0.15 and abs(ball.visionBearing) < 0.15:
                 commands.setWalkVelocity(0, 0, 0)
                 reset_params()
                 stage_flag = 5
@@ -363,17 +363,17 @@ class Playing(Task):
         
             C = -1.*P/1000
         
-            if C > 0.5:
-                C = 0.5
-            if C < -0.5:
-                C = -0.5
+            if C > 0.3:
+                C = 0.3
+            if C < -0.3:
+                C = -0.3
 
             if P > 0:
                 C = 0
         
             ##########################################
 
-            dT = -0.4
+            dT = -0.3
             dV = ball.visionBearing
             
             dpreP = dP
@@ -383,10 +383,10 @@ class Playing(Task):
         
             dC = -dP * 1.5
         
-            if dC > 0.5:
-                dC = 0.5
-            if dC < -0.5:
-                dC = -0.5
+            if dC > 0.3:
+                dC = 0.3
+            if dC < -0.3:
+                dC = -0.3
 
             ##########################################
             aT = 0
@@ -397,7 +397,7 @@ class Playing(Task):
             aI = aI + aP
             aD = aP - apreP
         
-            aC = -aP * 0.2
+            aC = -aP * 0.4
         
             if aC > 0.5:
                 aC = 0.5
@@ -409,7 +409,7 @@ class Playing(Task):
             C, dC = C * rat, dC * rat
                 
             # print('ABS', abs(dV - dT), 'V', V)
-            if abs(dV - dT) < 0.05 and V < 150 + 5:
+            if abs(dV - dT) < 0.05 and V < 130:
                 commands.setWalkVelocity(0, 0, 0)
                 reset_params()
                 stage_flag = 6
