@@ -150,14 +150,16 @@ void GLDrawer::drawBall(){
     objectsGL.drawBallVelColor(absBall, absBallVel, 1.0, Colors::Pink);
   }
 
-  WorldObject* ball = &(gtcache_.world_object->objects_[WO_BALL]);
+  WorldObject* ball = &(bcache_.world_object->objects_[WO_BALL]);
+  Matrix2f bcov = bcache_.localization_mem->getBallCov();
+
   objectsGL.drawBall(ball->loc,1.0);
 
   if (display_[SHOW_BALL_VEL])
     objectsGL.drawBallVel(ball->loc, ball->absVel, 1.0);
   if (display_[SHOW_BALL_UNCERT]) {
     basicGL.colorRGB(Colors::Orange);
-    localizationGL.drawUncertaintyEllipse(ball->loc,ball->sd);
+    localizationGL.drawUncertaintyEllipse(ball->loc, bcov);
   }
 }
 
