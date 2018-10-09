@@ -2316,3 +2316,116 @@ goalieFallSplit[core.RShoulderPitch] = -145  # -90 # -14
 goalieFallSplit[core.RShoulderRoll] = -10 # -30 # 16.057673120688
 goalieFallSplit[core.RElbowYaw] = -0.43705014461078
 goalieFallSplit[core.RElbowRoll] = -2.8149395230157
+
+
+
+
+
+
+
+myblockleft = dict()
+myblockleft[core.HeadYaw] = 0.0
+myblockleft[core.HeadPitch] = 0
+myblockleft[core.LShoulderPitch] = -90
+myblockleft[core.LShoulderRoll] = 74
+myblockleft[core.LElbowYaw] = 0
+myblockleft[core.LElbowRoll] = 0
+myblockleft[core.LHipYawPitch] = -5
+myblockleft[core.LHipPitch] = -46.5
+myblockleft[core.LHipRoll] = -1.0 * 0
+myblockleft[core.LKneePitch] = 125
+myblockleft[core.LAnklePitch] = -70
+myblockleft[core.LAnkleRoll] = -1.0 * 0
+myblockleft[core.RHipYawPitch] = -5
+myblockleft[core.RHipPitch] = -46.5
+myblockleft[core.RHipRoll] = 0
+myblockleft[core.RKneePitch] = 125
+myblockleft[core.RAnklePitch] = -70
+myblockleft[core.RAnkleRoll] = 0
+myblockleft[core.RShoulderPitch] = -90
+myblockleft[core.RShoulderRoll] = 0
+myblockleft[core.RElbowYaw] = 0
+myblockleft[core.RElbowRoll] = 0
+
+
+
+
+myblockright = dict()
+myblockright[core.HeadYaw] = 0.0
+myblockright[core.HeadPitch] = 0
+myblockright[core.LShoulderPitch] = -90
+myblockright[core.LShoulderRoll] = 0
+myblockright[core.LElbowYaw] = 0
+myblockright[core.LElbowRoll] = 0
+myblockright[core.LHipYawPitch] = -5
+myblockright[core.LHipPitch] = -46.5
+myblockright[core.LHipRoll] = -1.0 * 0
+myblockright[core.LKneePitch] = 125
+myblockright[core.LAnklePitch] = -70
+myblockright[core.LAnkleRoll] = -1.0 * 0
+myblockright[core.RHipYawPitch] = -5
+myblockright[core.RHipPitch] = -46.5
+myblockright[core.RHipRoll] = 0
+myblockright[core.RKneePitch] = 125
+myblockright[core.RAnklePitch] = -70
+myblockright[core.RAnkleRoll] = 0
+myblockright[core.RShoulderPitch] = -90
+myblockright[core.RShoulderRoll] = 74
+myblockright[core.RElbowYaw] = 0
+myblockright[core.RElbowRoll] = 0
+
+
+
+
+
+myblockcenter = dict()
+myblockcenter[core.HeadYaw] = 0.0
+myblockcenter[core.HeadPitch] = 0
+myblockcenter[core.LShoulderPitch] = 0
+myblockcenter[core.LShoulderRoll] = 0
+myblockcenter[core.LElbowYaw] = 0
+myblockcenter[core.LElbowRoll] = 0
+myblockcenter[core.LHipYawPitch] = -5
+myblockcenter[core.LHipPitch] = -46.5
+myblockcenter[core.LHipRoll] = -1.0 * 0
+myblockcenter[core.LKneePitch] = 125
+myblockcenter[core.LAnklePitch] = -70
+myblockcenter[core.LAnkleRoll] = -1.0 * 0
+myblockcenter[core.RHipYawPitch] = -5
+myblockcenter[core.RHipPitch] = -46.5
+myblockcenter[core.RHipRoll] = 0
+myblockcenter[core.RKneePitch] = 125
+myblockcenter[core.RAnklePitch] = -70
+myblockcenter[core.RAnkleRoll] = 0
+myblockcenter[core.RShoulderPitch] = 0
+myblockcenter[core.RShoulderRoll] = 0
+myblockcenter[core.RElbowYaw] = 0
+myblockcenter[core.RElbowRoll] = 0
+
+
+
+
+
+mynoblock = dict()
+mynoblock[core.HeadYaw] = 0.0
+mynoblock[core.HeadPitch] = 0
+mynoblock[core.LShoulderPitch] = -90
+mynoblock[core.LShoulderRoll] = 0
+mynoblock[core.LElbowYaw] = 0
+mynoblock[core.LElbowRoll] = 0
+mynoblock[core.LHipYawPitch] = -5
+mynoblock[core.LHipPitch] = -46.5
+mynoblock[core.LHipRoll] = -1.0 * 0
+mynoblock[core.LKneePitch] = 125
+mynoblock[core.LAnklePitch] = -70
+mynoblock[core.LAnkleRoll] = -1.0 * 0
+mynoblock[core.RHipYawPitch] = -5
+mynoblock[core.RHipPitch] = -46.5
+mynoblock[core.RHipRoll] = 0
+mynoblock[core.RKneePitch] = 125
+mynoblock[core.RAnklePitch] = -70
+mynoblock[core.RAnkleRoll] = 0
+mynoblock[core.RShoulderPitch] = -90
+mynoblock[core.RShoulderRoll] = 0
+mynoblock[core.RElbowYaw] = 0
+mynoblock[core.RElbowRoll] = 0
