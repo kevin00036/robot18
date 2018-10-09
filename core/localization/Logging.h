@@ -1,5 +1,5 @@
 #pragma once
 #include <memory/TextLogger.h>
-#define log(level, fstring, ...) \
+#define tlog(level, fstring, ...) \
   if(tlogger_) \
     tlogger_->logFromLocalization(level, fstring, ##__VA_ARGS__)

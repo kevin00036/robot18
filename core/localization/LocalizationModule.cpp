@@ -7,11 +7,13 @@
 #include <localization/Logging.h>
 
 // Boilerplate
-LocalizationModule::LocalizationModule() : tlogger_(textlogger), pfilter_(new ParticleFilter(cache_, tlogger_)) {
+LocalizationModule::LocalizationModule() : tlogger_(textlogger), pfilter_(new ParticleFilter(cache_, tlogger_)), \
+                                             kfilter_(new ExtKalmanFilter(tlogger_)) {
 }
 
 LocalizationModule::~LocalizationModule() {
   delete pfilter_;
+  delete kfilter_;
 }
 
 // Boilerplate
@@ -56,14 +58,18 @@ void LocalizationModule::initFromWorld() {
   reInit();
   auto& self = cache_.world_object->objects_[cache_.robot_state->WO_SELF];
   pfilter_->init(self.loc, self.orientation);
+  kfilter_->reset();
 }
 
 // Reinitialize from scratch
 void LocalizationModule::reInit() {
-  pfilter_->init(Point2D(-750,0), 0.0f);
-  cache_.localization_mem->player_ = Point2D(-750,0);
+  cache_.localization_mem->player_ = Point2D(-1250,0);
   cache_.localization_mem->state = decltype(cache_.localization_mem->state)::Zero();
   cache_.localization_mem->covariance = decltype(cache_.localization_mem->covariance)::Identity();
+  pfilter_->init(cache_.localization_mem->player_, 0.0f);
+  kfilter_->reset();
+  cache_.world_object->objects_[cache_.robot_state->WO_SELF].orientation = 0.;
+  last_frame_time = clock();
 }
 
 void LocalizationModule::moveBall(const Point2D& position) {
@@ -84,30 +90,85 @@ void LocalizationModule::processFrame() {
   // and store it back into world objects
   auto sloc = cache_.localization_mem->player_;
   self.loc = sloc;
-    
-  //TODO: modify this block to use your Kalman filter implementation
+  tlog(30, "Self: (%f, %f) Orien %f", sloc.x, sloc.y, self.orientation);
+
+  double delta_t = (clock() - last_frame_time) / (double)CLOCKS_PER_SEC;
+  tlog(30, "dt = %.3f sec", delta_t);
+  last_frame_time = clock();
+  kfilter_->motionUpdate({}, delta_t);
+
   if(ball.seen) {
+    last_ball_seen = clock();
+
     // Compute the relative position of the ball from vision readings
     auto relBall = Point2D::getPointFromPolar(ball.visionDistance, ball.visionBearing);
+    tlog(30, "RelBall: (%f, %f) VDis %.0f Dir %.0f", relBall.x, relBall.y, ball.visionDistance, ball.visionBearing * RAD_T_DEG);
 
-    // Compute the global position of the ball based on our assumed position and orientation
-    auto globalBall = relBall.relativeToGlobal(self.loc, self.orientation);
+    VectorOd obs;
+    obs << relBall.x, relBall.y;
 
-    // Update the ball in the WorldObject block so that it can be accessed in python
-    ball.loc = globalBall;
-    ball.distance = ball.visionDistance;
-    ball.bearing = ball.visionBearing;
-    //ball.absVel = fill this in
-
-    // Update the localization memory objects with localization calculations
-    // so that they are drawn in the World window
-    cache_.localization_mem->state[0] = ball.loc.x;
-    cache_.localization_mem->state[1] = ball.loc.y;
-    cache_.localization_mem->covariance = decltype(cache_.localization_mem->covariance)::Identity() * 10000;
-  } 
-  //TODO: How do we handle not seeing the ball?
-  else {
-    ball.distance = 10000.0f;
-    ball.bearing = 0.0f;
+    double logLikelihood = kfilter_->getObsLogLikelihood(obs);
+    tlog(30, "log(obs) = %f", logLikelihood);
+    
+    kfilter_->measureUpdate(obs);
   }
+  if(clock() - last_ball_seen >= 1.0 * CLOCKS_PER_SEC)
+    kfilter_->reset();
+
+  MatrixOd cov;
+  VectorOd kf_obs = kfilter_->getObs(&cov);
+  VectorSd kf_state = kfilter_->getMean();
+  MatrixSd kf_cov = kfilter_->getCov();
+
+  stringstream ss;
+  string s;
+  ss << fixed<<setprecision(0);
+  ss << kf_state.transpose();
+  s = ss.str();
+  tlog(30, "State: [%s]", s.c_str());
+  ss.str("");
+  ss << kf_cov;
+  s = ss.str();
+  tlog(30, "State: [\n%s\n]", s.c_str());
+
+  auto kf_relBall = Point2D(kf_obs(STATE_X), kf_obs(STATE_Y));
+
+  // Compute the global position of the ball based on our assumed position and orientation
+  auto globalBall = kf_relBall.relativeToGlobal(self.loc, self.orientation);
+  auto globalCov = cov; // should rotate, but now self.orientation == 0
+
+  // Update the ball in the WorldObject block so that it can be accessed in python
+  ball.loc = globalBall;
+  tlog(30, "Ball: (%f, %f)", ball.loc.x, ball.loc.y);
+  tlog(30, "Cov: [ %f, %f ]", cov(0, 0), cov(0, 1));
+  tlog(30, "     [ %f, %f ]", cov(1, 0), cov(1, 1));
+  ball.distance = kf_relBall.getMagnitude();
+  ball.bearing = kf_relBall.getDirection();
+  ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
+  ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
+
+  // Update the localization memory objects with localization calculations
+  // so that they are drawn in the World window
+  cache_.localization_mem->state[0] = ball.loc.x;
+  cache_.localization_mem->state[1] = ball.loc.y;
+  cache_.localization_mem->covariance = globalCov.cast<float>();
+
+  //TODO: How do we handle not seeing the ball?
+  //else {
+    ////ball.distance = 10000.0f;
+    ////ball.bearing = 0.0f;
+    ////ball.loc = {10000.f, 0.f};
+    //MatrixOd cov;
+    //VectorOd kf_obs = kfilter_->getObs(&cov);
+    //VectorSd kf_state = kfilter_->getMean();
+
+    //auto kf_relBall = Point2D(kf_obs(STATE_X), kf_obs(STATE_Y));
+    //auto globalBall = kf_relBall.relativeToGlobal(self.loc, self.orientation);
+    //auto globalCov = cov; // should rotate, but now self.orientation == 0
+
+    //ball.loc = globalBall;
+    //ball.distance = kf_relBall.getMagnitude();
+    //ball.bearing = kf_relBall.getDirection();
+    //ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
+  //}
 }

@@ -22,3 +22,4 @@ logs*
 *.pyo
 *.pyc
 submit
+data/simulation/**/*.yaml
