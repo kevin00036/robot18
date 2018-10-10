@@ -32,4 +32,5 @@ class LocalizationModule : public Module {
     ExtKalmanFilter* kfilter_;
     clock_t last_ball_seen;
     clock_t last_frame_time;
+    int ball_seen_counter;
 };

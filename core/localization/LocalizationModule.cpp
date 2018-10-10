@@ -70,6 +70,7 @@ void LocalizationModule::reInit() {
   kfilter_->reset();
   cache_.world_object->objects_[cache_.robot_state->WO_SELF].orientation = 0.;
   last_frame_time = clock();
+  ball_seen_counter = 0;
 }
 
 void LocalizationModule::moveBall(const Point2D& position) {
@@ -113,6 +114,11 @@ void LocalizationModule::processFrame() {
   tlog(30, "dt = %.3f sec", delta_t);
   last_frame_time = clock();
   kfilter_->motionUpdate({}, delta_t);
+
+  if(ball.seen) ball_seen_counter++;
+  else ball_seen_counter--;
+  ball_seen_counter = max(ball_seen_counter, 0);
+  ball_seen_counter = min(ball_seen_counter, 10);
 
   if(ball.seen) {
     last_ball_seen = clock();
@@ -188,7 +194,7 @@ void LocalizationModule::processFrame() {
   auto velCov = kf_cov.block<2, 2>(0, 0);
 
   ball.left = ball.right = ball.center = false;
-  if (pow(velCov.determinant(), 1./4) <= 800) {
+  if (pow(velCov.determinant(), 1./4) <= 800 and ball_seen_counter >= 5) {
     ball.left = left;
     ball.right = right;
     ball.center = center;
