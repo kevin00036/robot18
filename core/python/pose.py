@@ -220,7 +220,7 @@ class MyBlockRight(Task):
     super(MyBlockRight, self).__init__(time=time)
     self.setSubtask(PoseSequence(
       cfgpose.myblockright, 1.0,
-      cfgpose.myblockright, self.time
+      cfgpose.sittingPoseNoArms, 1.0
     ))
 
 class MyBlockLeft(Task):
@@ -228,7 +228,7 @@ class MyBlockLeft(Task):
     super(MyBlockLeft, self).__init__(time=time)
     self.setSubtask(PoseSequence(
       cfgpose.myblockleft, 1.0,
-      cfgpose.myblockleft, self.time
+      cfgpose.sittingPoseNoArms, 1.0
     ))
 
 class MyBlockCenter(Task):
@@ -236,7 +236,7 @@ class MyBlockCenter(Task):
     super(MyBlockCenter, self).__init__(time=time)
     self.setSubtask(PoseSequence(
       cfgpose.myblockcenter, 1.0,
-      cfgpose.myblockcenter, self.time
+      cfgpose.sittingPoseNoArms, 1.0
     ))
 
 class MyNoBlock(Task):
@@ -244,6 +244,6 @@ class MyNoBlock(Task):
     super(MyNoBlock, self).__init__(time=time)
     self.setSubtask(PoseSequence(
       cfgpose.mynoblock, 1.0,
-      cfgpose.mynoblock, self.time
+      cfgpose.sittingPoseNoArms, 1.0
     ))
 
