@@ -5,7 +5,7 @@
 #include <math/Geometry.h>
 #include <localization/Particle.h>
 #include <schema/gen/LocalizationBlock_generated.h>
-#define STATE_SIZE 2
+#define STATE_SIZE 4
 #define COV_SIZE (STATE_SIZE * STATE_SIZE)
 #define MAX_MODELS_IN_MEM 1
 #define MODEL_STATE_SIZE (MAX_MODELS_IN_MEM * STATE_SIZE)

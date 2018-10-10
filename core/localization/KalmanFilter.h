@@ -36,10 +36,10 @@ typedef Matrix<double, NUM_OBS, NUM_STATE> MatrixOSd;
 typedef Matrix<double, NUM_CTRL, 1> VectorCd;
 
 const double INIT_ERR_POS = 10000.;
-const double INIT_ERR_VEL = 1000.;
+const double INIT_ERR_VEL = 10000.;
 const double TRANS_DAMP_K = 1.;
 const double TRANS_ERR_POS = 250.;
-const double TRANS_ERR_VEL = 500.;
+const double TRANS_ERR_VEL = 1000.;
 const double MEAS_ERR_R_RATIO = 0.1;
 const double MEAS_ERR_THETA = 0.1;
 

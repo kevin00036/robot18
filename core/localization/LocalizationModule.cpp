@@ -112,7 +112,7 @@ void LocalizationModule::processFrame() {
     
     kfilter_->measureUpdate(obs);
   }
-  if(clock() - last_ball_seen >= 1.0 * CLOCKS_PER_SEC)
+  if(clock() - last_ball_seen >= 2.0 * CLOCKS_PER_SEC)
     kfilter_->reset();
 
   MatrixOd cov;
@@ -147,11 +147,16 @@ void LocalizationModule::processFrame() {
   ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
   ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
 
+  cout<<fixed<<setprecision(0);
+  cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
+
   // Update the localization memory objects with localization calculations
   // so that they are drawn in the World window
   cache_.localization_mem->state[0] = ball.loc.x;
   cache_.localization_mem->state[1] = ball.loc.y;
-  cache_.localization_mem->covariance = globalCov.cast<float>();
+  cache_.localization_mem->state[2] = ball.absVel.x;
+  cache_.localization_mem->state[3] = ball.absVel.y;
+  cache_.localization_mem->covariance = kf_cov.cast<float>();
 
   //TODO: How do we handle not seeing the ball?
   //else {
