@@ -407,7 +407,7 @@ void ImageProcessor::buildBlobs() {
 
       //goal
       //if(blobSize >= 2000 and clr == c_BLUE) {
-      //if(0)
+      if(0)
       if(blobSize >= 500 and clr == c_BLUE) {
 
         auto bc = BallCandidate();
@@ -734,11 +734,26 @@ void ImageProcessor::buildBlobs() {
     void ImageProcessor::processBallCandidates() {
       vector<BallCandidate> new_cands;
 
-      double ball_rad = 25;
+      double ball_rad = 32;
       for(auto bc: ballCandidates) {
         Position p = cmatrix_.getWorldPosition(bc.centerX, bc.centerY, ball_rad);
         bc.relPosition = p;
         int distance = cmatrix_.groundDistance(p);
+
+
+        Eigen::Vector3f v1, v2, v3;
+        v1 << bc.centerX, bc.centerY, 1;
+        v2 << bc.centerX + bc.radius, bc.centerY, 1;
+        v3 << bc.centerX, bc.centerY + bc.radius, 1;
+        auto Kinv = cmatrix_.cameraCalibration_.inverse();
+        auto u1 = Kinv * v1, u2 = Kinv * v2, u3 = Kinv * v3;
+        auto c12 = (u1.dot(u2)) / (u1.norm() * u2.norm());
+        auto c13 = (u1.dot(u3)) / (u1.norm() * u3.norm());
+        double theta = (acos(c12) + acos(c13)) / 2;
+
+        double h0 = cmatrix_.cameraPosition_[2] - ball_rad;
+        double straightDistance = ball_rad / sin(theta);
+        bc.groundDistance = sqrt(max(straightDistance * straightDistance - h0 * h0, 2500.));
 
         int xmin = 10000, xmax = -10000, ymin = 10000, ymax = -10000;
         for(int i=0; i<12; i++) {

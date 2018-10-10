@@ -284,6 +284,8 @@ void VisionWindow::drawBallCands(ImageWidget* image) {
     painter.drawEllipse(
         (int)b->centerX - r - 1,
         (int)b->centerY - r - 1, 2 * r + 2, 2 * r + 2);
+  painter.setPen(QPen(QColor(0, 0, 0), 1));
+    painter.drawText((int)b->centerX - 10, (int)b->centerY + 10, to_string((int)b->groundDistance).c_str());
   }
 }
 
