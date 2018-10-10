@@ -26,6 +26,10 @@ WorldObject::WorldObject() {
   imageCenterY=0;
   fieldLineIndex = -1;
   fromTopCamera = false;
+
+  left = false;
+  right = false;
+  center = false;
 }
 
 WorldObject::WorldObject(WorldObjectType type) : WorldObject() {

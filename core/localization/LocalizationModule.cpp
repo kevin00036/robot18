@@ -82,6 +82,22 @@ void LocalizationModule::movePlayer(const Point2D& position, float orientation) 
   // simulator window.
 }
 
+
+bool cross(double a[],double b[], double c[], double d[]){
+  double p1, p2, p3, q1, q2, q3;
+  p1 = b[1]-a[1];
+  p2 = a[0]-b[0];
+  p3 = b[0]*a[1]-a[0]*b[1];
+  q1 = d[1]-c[1];
+  q2 = c[0]-d[0];
+  q3 = d[0]*c[1]-c[0]*d[1];
+  double sign1, sign2;
+  sign1 = (p1*c[0]+p2*c[1]+p3)*(p1*d[0]+p2*d[1]+p3);
+  sign2 = (q1*a[0]+q2*a[1]+q3)*(q1*b[0]+q2*b[1]+q3);
+  bool cross = sign1<0 and sign2<0;
+  return cross;
+}
+
 void LocalizationModule::processFrame() {
   auto& ball = cache_.world_object->objects_[WO_BALL];
   auto& self = cache_.world_object->objects_[cache_.robot_state->WO_SELF];
@@ -148,8 +164,30 @@ void LocalizationModule::processFrame() {
   ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
   ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
 
-  cout<<fixed<<setprecision(0);
-  cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
+  double a[2] = {ball.loc.x/100, ball.loc.y/100};
+  double b[2] = {ball.sd.x/100, ball.sd.y/100};
+
+  double c1[2] = {-1250/100, 0};
+  double d1[2] = {-1250/100, -2000/100};
+  double c2[2] = {-1250/100, 2000/100};
+  double d2[2] = {-1250/100, 0};
+
+  double c3[2] = {-1250/100, 150/100};
+  double d3[2] = {-1250/100, -150/100};
+
+  bool right = cross(a,b,c1,d1);
+  bool left = cross(a,b,c2,d2);
+  bool center = cross(a,b,c3,d3);
+
+  tlog(30, "Ball Loc: (%f, %f)", ball.loc.x, ball.loc.y);
+  tlog(30, "Ball Stop: (%f, %f)", ball.sd.x, ball.sd.y);
+  tlog(30, "Ball Left: (%d)", left);
+  tlog(30, "Ball Right: (%d)", right);
+  tlog(30, "Ball Center: (%d)", center);
+
+  ball.left = left;
+  ball.right = right;
+  ball.center = center;
 
   // Update the localization memory objects with localization calculations
   // so that they are drawn in the World window
