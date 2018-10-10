@@ -164,16 +164,16 @@ void LocalizationModule::processFrame() {
   ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
   ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
 
-  double a[2] = {ball.loc.x/100, ball.loc.y/100};
-  double b[2] = {ball.sd.x/100, ball.sd.y/100};
+  double a[2] = {ball.loc.x, ball.loc.y};
+  double b[2] = {ball.sd.x, ball.sd.y};
 
-  double c1[2] = {-1250/100, 0};
-  double d1[2] = {-1250/100, -2000/100};
-  double c2[2] = {-1250/100, 2000/100};
-  double d2[2] = {-1250/100, 0};
+  double c1[2] = {-1250, 0};
+  double d1[2] = {-1250, -500};
+  double c2[2] = {-1250, 500};
+  double d2[2] = {-1250, 0};
 
-  double c3[2] = {-1250/100, 150/100};
-  double d3[2] = {-1250/100, -150/100};
+  double c3[2] = {-1250, 180};
+  double d3[2] = {-1250, -180};
 
   bool right = cross(a,b,c1,d1);
   bool left = cross(a,b,c2,d2);
@@ -185,9 +185,17 @@ void LocalizationModule::processFrame() {
   tlog(30, "Ball Right: (%d)", right);
   tlog(30, "Ball Center: (%d)", center);
 
-  ball.left = left;
-  ball.right = right;
-  ball.center = center;
+  auto velCov = kf_cov.block<2, 2>(0, 0);
+
+  ball.left = ball.right = ball.center = false;
+  if (pow(velCov.determinant(), 1./4) <= 800) {
+    ball.left = left;
+    ball.right = right;
+    ball.center = center;
+  }
+
+  //cout<<fixed<<setprecision(0);
+  //cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
 
   // Update the localization memory objects with localization calculations
   // so that they are drawn in the World window

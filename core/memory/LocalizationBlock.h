@@ -55,6 +55,7 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
     Point2D getBallPosition();
     Point2D getBallVel();
     Eigen::Matrix2f getBallCov();
+    Eigen::Matrix2f getBallVelCov();
     std::vector<Particle> particles;
     //SCHEMA_FIELD(std::vector<Particle> particles);
     //void serialize(StreamBuffer& buffer, std::string);

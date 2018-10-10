@@ -20,6 +20,10 @@ Point2D LocalizationBlock::getBallVel() {
 Matrix2f LocalizationBlock::getBallCov() {
   return covariance.block<2,2>(0,0);
 }
+
+Matrix2f LocalizationBlock::getBallVelCov() {
+  return covariance.block<2,2>(2,2);
+}
 /*
 void LocalizationBlock::serialize(StreamBuffer& buffer, std::string) {
   std::vector<StreamBuffer> parts(4);
