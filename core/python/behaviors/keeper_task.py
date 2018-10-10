@@ -36,6 +36,8 @@ class Playing(Task):
         global state, block_time, ps_cen, ps_left, ps_right, block_start, ps, curact
 
         ball = memory.world_objects.getObjPtr(core.WO_BALL)
+        if ball.seen or ball.bearing == 0:
+            commands.setHeadPan(ball.bearing, 0.1)
         if state == 0:
             print('nothing')
             if ball.seen and (ball.right or ball.left or ball.center):
@@ -63,6 +65,14 @@ class Playing(Task):
 
             ps.run()
             block_start = False
-            if self.getTime() - block_time >= 3.0:
+            if self.getTime() - block_time >= 1:
+                ps = pose.ToPose(cfgpose.mynoblock, 1)
+                state = 2
+                block_time = self.getTime()
+        elif state == 2:
+            ps.run()
+
+            if self.getTime() - block_time >= 2:
                 state = 0
+
 
