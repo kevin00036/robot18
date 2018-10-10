@@ -31,8 +31,8 @@ VectorSd ExtKalmanFilter::transitionFunc(VectorSd mu, VectorCd ctrl, double delt
 
   Jac << 1, 0, delta_t, 0,
          0, 1, 0, delta_t,
-         0, 0, s * (px + r)+eps, s * px,
-         0, 0, s * py, s * (py + r)+eps;
+         0, 0, 1, 0,
+         0, 0, 0, 1;
 
   Cov = MatrixSd::Identity() * TRANS_ERR_POS * TRANS_ERR_POS * delta_t;
   Cov(2, 2) = Cov(3, 3) = TRANS_ERR_VEL * TRANS_ERR_VEL * delta_t;

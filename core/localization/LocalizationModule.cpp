@@ -161,7 +161,26 @@ void LocalizationModule::processFrame() {
   ball.distance = kf_relBall.getMagnitude();
   ball.bearing = kf_relBall.getDirection();
   ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
-  ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
+  auto velCov = kf_cov.block<2, 2>(0, 0);
+
+  double v = ball.absVel.getMagnitude();
+  double d = v * v / (2 * TRANS_ACCEL);
+  double dx = d * (ball.absVel.x / v);
+  double dy = d * (ball.absVel.y / v);
+
+  //cout<<fixed<<setprecision(0);
+  //cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
+
+  // Update the localization memory objects with localization calculations
+  // so that they are drawn in the World window
+  cache_.localization_mem->state[0] = ball.loc.x;
+  cache_.localization_mem->state[1] = ball.loc.y;
+  cache_.localization_mem->state[2] = dx;
+  cache_.localization_mem->state[3] = dy;
+  cache_.localization_mem->covariance = kf_cov.cast<float>();
+
+  //ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
+  ball.sd = ball.loc + Point2D(dx, dy); // Predicted stop position
 
   double a[2] = {ball.loc.x, ball.loc.y};
   double b[2] = {ball.sd.x, ball.sd.y};
@@ -184,25 +203,12 @@ void LocalizationModule::processFrame() {
   tlog(30, "Ball Right: (%d)", right);
   tlog(30, "Ball Center: (%d)", center);
 
-  auto velCov = kf_cov.block<2, 2>(0, 0);
-
   ball.left = ball.right = ball.center = false;
   if (pow(velCov.determinant(), 1./4) <= 800) {
     ball.left = left;
     ball.right = right;
     ball.center = center;
   }
-
-  //cout<<fixed<<setprecision(0);
-  //cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
-
-  // Update the localization memory objects with localization calculations
-  // so that they are drawn in the World window
-  cache_.localization_mem->state[0] = ball.loc.x;
-  cache_.localization_mem->state[1] = ball.loc.y;
-  cache_.localization_mem->state[2] = ball.absVel.x;
-  cache_.localization_mem->state[3] = ball.absVel.y;
-  cache_.localization_mem->covariance = kf_cov.cast<float>();
 
   //TODO: How do we handle not seeing the ball?
   //else {
