@@ -407,7 +407,7 @@ void ImageProcessor::buildBlobs() {
 
       //goal
       //if(blobSize >= 2000 and clr == c_BLUE) {
-      //if(0)
+      if(0)
       if(blobSize >= 500 and clr == c_BLUE) {
 
         auto bc = BallCandidate();
@@ -734,7 +734,7 @@ void ImageProcessor::buildBlobs() {
     void ImageProcessor::processBallCandidates() {
       vector<BallCandidate> new_cands;
 
-      double ball_rad = 25;
+      double ball_rad = 32;
       for(auto bc: ballCandidates) {
         Position p = cmatrix_.getWorldPosition(bc.centerX, bc.centerY, ball_rad);
         bc.relPosition = p;
