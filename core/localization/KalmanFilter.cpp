@@ -15,15 +15,27 @@ VectorSd ExtKalmanFilter::transitionFunc(VectorSd mu, VectorCd ctrl, double delt
                                          MatrixSd *cov, MatrixSd *jac) {
   MatrixSd Jac, Cov;
 
+  double adt = TRANS_ACCEL * delta_t;
+  double vx = mu(STATE_VELX), vy = mu(STATE_VELY);
+  double v = hypot(vx, vy) + 1E-5;
+  double r = 1. - adt / v;
+  double s = (r >= 0);
+  double p = adt / (v * v * v);
+  double px = p * vx * vx, py = p * vy * vy;
+  double xrat = v * (1. - s * r * r) / (2. * TRANS_ACCEL);
+  double eps = 1e-3;
+
+  VectorSd mu_p;
+  mu_p.segment<2>(0) = mu.segment<2>(0) + xrat * mu.segment<2>(2);
+  mu_p.segment<2>(2) = s * r * mu.segment<2>(2);
+
   Jac << 1, 0, delta_t, 0,
          0, 1, 0, delta_t,
-         0, 0, 1-TRANS_DAMP_K*delta_t, 0,
-         0, 0, 0, 1-TRANS_DAMP_K*delta_t;
+         0, 0, s * (px + r)+eps, s * px,
+         0, 0, s * py, s * (py + r)+eps;
 
   Cov = MatrixSd::Identity() * TRANS_ERR_POS * TRANS_ERR_POS * delta_t;
   Cov(2, 2) = Cov(3, 3) = TRANS_ERR_VEL * TRANS_ERR_VEL * delta_t;
-
-  VectorSd mu_p = Jac * mu;
 
   if(cov) *cov = Cov;
   if(jac) *jac = Jac;
