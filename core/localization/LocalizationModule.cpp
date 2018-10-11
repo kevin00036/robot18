@@ -83,7 +83,7 @@ void LocalizationModule::movePlayer(const Point2D& position, float orientation) 
   // simulator window.
 }
 
-
+// Decide whether segmant ab and segment cd intersects
 bool cross(double a[],double b[], double c[], double d[]){
   double p1, p2, p3, q1, q2, q3;
   p1 = b[1]-a[1];
@@ -110,11 +110,14 @@ void LocalizationModule::processFrame() {
   self.orientation = pfilter_->pose().rotation;
   log(40, "Localization Update: x=%2.f, y=%2.f, theta=%2.2f", self.loc.x, self.loc.y, self.orientation * RAD_T_DEG);
 
+  // Calculate the time delta from last frame to this frame, and update the
+  // kalman filter
   double delta_t = (clock() - last_frame_time) / (double)CLOCKS_PER_SEC;
-  tlog(30, "dt = %.3f sec", delta_t);
   last_frame_time = clock();
   kfilter_->motionUpdate({}, delta_t);
 
+  // Maintain ball seen counter (seen: +1, unseen: -1). We do the goal entering
+  // detection only if the counter is >= 5
   if(ball.seen) ball_seen_counter++;
   else ball_seen_counter--;
   ball_seen_counter = max(ball_seen_counter, 0);
@@ -129,12 +132,10 @@ void LocalizationModule::processFrame() {
 
     VectorOd obs;
     obs << relBall.x, relBall.y;
-
-    double logLikelihood = kfilter_->getObsLogLikelihood(obs);
-    tlog(30, "log(obs) = %f", logLikelihood);
     
     kfilter_->measureUpdate(obs);
   }
+  // If ball is not seen for 2 seconds, reset the kalman filter
   if(clock() - last_ball_seen >= 2.0 * CLOCKS_PER_SEC)
     kfilter_->reset();
 
@@ -142,17 +143,6 @@ void LocalizationModule::processFrame() {
   VectorOd kf_obs = kfilter_->getObs(&cov);
   VectorSd kf_state = kfilter_->getMean();
   MatrixSd kf_cov = kfilter_->getCov();
-
-  stringstream ss;
-  string s;
-  ss << fixed<<setprecision(0);
-  ss << kf_state.transpose();
-  s = ss.str();
-  tlog(30, "State: [%s]", s.c_str());
-  ss.str("");
-  ss << kf_cov;
-  s = ss.str();
-  tlog(30, "State: [\n%s\n]", s.c_str());
 
   auto kf_relBall = Point2D(kf_obs(STATE_X), kf_obs(STATE_Y));
 
@@ -162,14 +152,12 @@ void LocalizationModule::processFrame() {
 
   // Update the ball in the WorldObject block so that it can be accessed in python
   ball.loc = globalBall;
-  tlog(30, "Ball: (%f, %f)", ball.loc.x, ball.loc.y);
-  tlog(30, "Cov: [ %f, %f ]", cov(0, 0), cov(0, 1));
-  tlog(30, "     [ %f, %f ]", cov(1, 0), cov(1, 1));
   ball.distance = kf_relBall.getMagnitude();
   ball.bearing = kf_relBall.getDirection();
   ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
   ball.sd = ball.loc + (ball.absVel / TRANS_DAMP_K); // Predicted stop position
 
+  // Detect whether the ball will enter the goal (and which part)
   double a[2] = {ball.loc.x, ball.loc.y};
   double b[2] = {ball.sd.x, ball.sd.y};
 
@@ -184,13 +172,6 @@ void LocalizationModule::processFrame() {
   bool right = cross(a,b,c1,d1);
   bool left = cross(a,b,c2,d2);
   bool center = cross(a,b,c3,d3);
-
-  tlog(30, "Ball Loc: (%f, %f)", ball.loc.x, ball.loc.y);
-  tlog(30, "Ball Stop: (%f, %f)", ball.sd.x, ball.sd.y);
-  tlog(30, "Ball Left: (%d)", left);
-  tlog(30, "Ball Right: (%d)", right);
-  tlog(30, "Ball Center: (%d)", center);
-
   auto velCov = kf_cov.block<2, 2>(0, 0);
 
   ball.left = ball.right = ball.center = false;
@@ -200,9 +181,6 @@ void LocalizationModule::processFrame() {
     ball.center = center;
   }
 
-  //cout<<fixed<<setprecision(0);
-  //cout<<"Ball "<<kf_state.transpose()<<" Target "<<ball.sd<<" dt "<<delta_t*1000<<endl;
-
   // Update the localization memory objects with localization calculations
   // so that they are drawn in the World window
   cache_.localization_mem->state[0] = ball.loc.x;
@@ -210,23 +188,4 @@ void LocalizationModule::processFrame() {
   cache_.localization_mem->state[2] = ball.absVel.x;
   cache_.localization_mem->state[3] = ball.absVel.y;
   cache_.localization_mem->covariance = kf_cov.cast<float>();
-
-  //TODO: How do we handle not seeing the ball?
-  //else {
-    ////ball.distance = 10000.0f;
-    ////ball.bearing = 0.0f;
-    ////ball.loc = {10000.f, 0.f};
-    //MatrixOd cov;
-    //VectorOd kf_obs = kfilter_->getObs(&cov);
-    //VectorSd kf_state = kfilter_->getMean();
-
-    //auto kf_relBall = Point2D(kf_obs(STATE_X), kf_obs(STATE_Y));
-    //auto globalBall = kf_relBall.relativeToGlobal(self.loc, self.orientation);
-    //auto globalCov = cov; // should rotate, but now self.orientation == 0
-
-    //ball.loc = globalBall;
-    //ball.distance = kf_relBall.getMagnitude();
-    //ball.bearing = kf_relBall.getDirection();
-    //ball.absVel = Point2D(kf_state(STATE_VELX), kf_state(STATE_VELY));
-  //}
 }

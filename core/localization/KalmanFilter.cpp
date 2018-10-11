@@ -15,6 +15,13 @@ VectorSd ExtKalmanFilter::transitionFunc(VectorSd mu, VectorCd ctrl, double delt
                                          MatrixSd *cov, MatrixSd *jac) {
   MatrixSd Jac, Cov;
 
+  auto pos = mu.segment<2>(0), vel = mu.segment<2>(2);
+  VectorSd mu_p;
+  double v = hypot(vel(0), vel(1));
+  double ratio = max(1. - TRANS_DAMP_K * delta_t * max(1., 500. / (v + 1E-5)), 0.);
+  mu_p.segment<2>(0) = pos + vel * delta_t;
+  mu_p.segment<2>(2) = vel * ratio;
+
   Jac << 1, 0, delta_t, 0,
          0, 1, 0, delta_t,
          0, 0, 1-TRANS_DAMP_K*delta_t, 0,
@@ -22,8 +29,6 @@ VectorSd ExtKalmanFilter::transitionFunc(VectorSd mu, VectorCd ctrl, double delt
 
   Cov = MatrixSd::Identity() * TRANS_ERR_POS * TRANS_ERR_POS * delta_t;
   Cov(2, 2) = Cov(3, 3) = TRANS_ERR_VEL * TRANS_ERR_VEL * delta_t;
-
-  VectorSd mu_p = Jac * mu;
 
   if(cov) *cov = Cov;
   if(jac) *jac = Jac;
@@ -34,11 +39,12 @@ VectorOd ExtKalmanFilter::observationFunc(VectorSd mu, MatrixOd *cov, MatrixOSd 
   MatrixOd Cov;
   MatrixOSd Jac;
 
+  VectorOd z = mu.segment<2>(0);
+
   Jac << 1, 0, 0, 0,
          0, 1, 0, 0;
 
-  VectorOd z = Jac * mu;
-
+  // Calculate (x, y) noise from (r, theta) noise
   double x = z(0), y = z(1);
   double r = hypot(x, y), theta = atan2(y, x);
   double costh = cos(theta), sinth = sin(theta);
@@ -52,12 +58,10 @@ VectorOd ExtKalmanFilter::observationFunc(VectorSd mu, MatrixOd *cov, MatrixOSd 
   RTErr << rerr*rerr, 0,
            0, therr*therr;
 
-  tlog(30, "Rerr = %d, therr = %d", rerr, therr);
-
   Cov = A * RTErr * A.transpose();
-  tlog(30, "MeasCov: [ %f, %f ]", Cov(0, 0), Cov(0, 1));
-  tlog(30, "         [ %f, %f ]", Cov(1, 0), Cov(1, 1));
 
+  // If true, then the output noise will include the noise due to state
+  // uncertainty
   if(state_noise)
     Cov = Jac * cov_ * Jac.transpose() + Cov;
 
@@ -76,9 +80,6 @@ void ExtKalmanFilter::measureUpdate(VectorOd obs) {
   MatrixOd Q;
   MatrixOSd H;
   VectorOd h = observationFunc(mu_, &Q, &H);
-  tlog(30, "StateCov: [ %f, %f ]", cov_(0, 0), cov_(0, 1));
-  tlog(30, "          [ %f, %f ]", cov_(1, 0), cov_(1, 1));
-
   MatrixSOd SH = cov_ * H.transpose();
   MatrixSOd K = SH * (H * SH + Q).inverse();
   mu_ = mu_ + K * (obs - h);
