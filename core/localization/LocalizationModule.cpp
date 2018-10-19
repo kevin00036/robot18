@@ -108,7 +108,7 @@ void LocalizationModule::processFrame() {
   pfilter_->processFrame();
   self.loc = pfilter_->pose().translation;
   self.orientation = pfilter_->pose().rotation;
-  log(40, "Localization Update: x=%2.f, y=%2.f, theta=%2.2f", self.loc.x, self.loc.y, self.orientation * RAD_T_DEG);
+  tlog(40, "Localization Update: x=%2.f, y=%2.f, theta=%2.2f", self.loc.x, self.loc.y, self.orientation * RAD_T_DEG);
 
   // Calculate the time delta from last frame to this frame, and update the
   // kalman filter
