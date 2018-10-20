@@ -12,10 +12,10 @@ ParticleFilter::ParticleFilter(MemoryCache& cache, TextLogger*& tlogger)
 void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
-  particles().resize(100);
+  particles().resize(300);
   for(auto& p : particles()) {
-    p.x = Random::inst().sampleU(-1750, 1750); //static_cast<int>(frame * 5), 250);
-    p.y = Random::inst().sampleU(-1250, 1250); // 0., 250);
+    p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
+    p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
     p.t = Random::inst().sampleU() *2*M_PI;  //0., M_PI / 4);
     p.w = Random::inst().sampleU();
   }
@@ -40,80 +40,75 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   // Retrieve odometry update - how do we integrate this into the filter?
   const auto& disp = cache_.odometry->displacement;
   tlog(41, "Updating particles from odometry: %2.f,%2.f @ %2.2f", disp.translation.x, disp.translation.y, disp.rotation * RAD_T_DEG);
+
+  double dx = disp.translation.x;
+  double dy = disp.translation.y;
+  double dth = disp.rotation;
+
+  for(auto& p : particles()) {
+    p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*30;
+    p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*30;
+    p.t = p.t + dth + Random::inst().sampleN()*M_PI/20;
+  }  
   
-  // Generate random particles for demonstration
   for(auto& beacon : beacon_data) {
      tlog(30, "%.2f, %.2f, %.2f, %.2f", beacon[0], beacon[1], beacon[2], beacon[3]);
   }
 
-  vector<double> particleprob;
+  double sumprob = 0;
   for(auto& p : particles()) {
     double totalprob = 0;
     for(auto& beacon : beacon_data) {
       double visdist, visbear, pardist, parbear;
       visdist = beacon[0];
       visbear = beacon[1];
-      pardist = sqrt((p.x - beacon[2])*(p.x - beacon[2]) + (p.y - beacon[3])*(p.y - beacon[3]));
-      parbear = atan2( (beacon[3] - p.y), (beacon[2] - p.x) ) - p.t;
+      pardist = hypot(p.x - beacon[2], p.y - beacon[3]);
+      parbear = atan2(beacon[3] - p.y, beacon[2] - p.x) - p.t;
  
-
+      // TODO: Angle 2*PI issue
       VectorObs mu_, st_;
       MatrixObs cov_;
       mu_ << visdist, visbear;
       st_ << pardist, parbear;
       cov_ = MatrixObs::Zero();
       cov_(0, 0) = 100 * 100;
-      cov_(1, 1) = M_PI/10 * M_PI/10;
+      cov_(1, 1) = M_PI/20 * M_PI/20;
       double prob = calcGaussianLogProb<2>(mu_, cov_, st_);
       totalprob += prob;
     }
-    totalprob = exp(totalprob);
-    particleprob.push_back(totalprob);
+    p.w = exp(totalprob);
+    sumprob += p.w;
   }
 
-  double sumprob = 0;
-  for (auto& n : particleprob)
-    sumprob += n;
-  for (auto& n : particleprob)
-    n = n/sumprob;
-  /*
-  int c = 0;
-  for(auto& p : particles()) {
-    p.w = particleprob[c];
-    c = c+1;
-  }
-  */
+  for (auto& p: particles())
+    p.w /= sumprob;
   
   vector<Particle> new_particle;
 
-  double M = particleprob.size();
-  double r = Random::inst().sampleU()/M;
   auto& P = particles();
+  double M = P.size();
+  double r = Random::inst().sampleU() / M;
   int i = 0;
-  double c = particleprob[0];
+  double c = P[0].w;
 
   for(int m=0; m<M; m++){
-    double u = r + m/M;
-    while(u > c){
+    double u = (r + m/M) / 0.99;
+    while(u > c and i < M-1){
       i = i + 1;
-      c = c + particleprob[i];
+      c = c + P[i].w;
     }
-    new_particle.push_back(P[i]);
+    if (u <= c)
+      new_particle.push_back(P[i]);
+    else
+      new_particle.push_back({
+                             Random::inst().sampleU(-2500.f, 2500.f), 
+                             Random::inst().sampleU(-1250.f, 1250.f),
+                             Random::inst().sampleU(-(float)M_PI, (float)M_PI)});
+
+    new_particle.back().w = 1.;
   }
-  tlog(30,"%d",new_particle.size());
+  tlog(30,"Particle Size %d",new_particle.size());
   cache_.localization_mem->particles = new_particle;
-
-
-  double vx = disp.translation.x;
-  double vy = disp.translation.y;
-  double vth = disp.rotation;
-
-  for(auto& p : particles()) {
-    p.x = p.x + vx * cos(p.t) - vy * sin(p.t) + Random::inst().sampleN()*100;
-    p.y = p.y + vx * sin(p.t) + vy * cos(p.t) + Random::inst().sampleN()*100;
-    p.t = p.t + vth + Random::inst().sampleN()*M_PI/10;
-  }  
-
 }
 
 const Pose2D& ParticleFilter::pose() const {
@@ -129,7 +124,6 @@ const Pose2D& ParticleFilter::pose() const {
       mean_ /= static_cast<float>(particles().size());
     dirty_ = false;
   }
-  tlog(30, "%.2f", mean_.rotation);
   return mean_;
 }
 

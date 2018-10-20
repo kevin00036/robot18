@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 using namespace Eigen;
 
-typedef Matrix<double, 2 ,2> MatrixObs;
+typedef Matrix<double, 2, 2> MatrixObs;
 typedef Matrix<double, 2, 1> VectorObs;
 
 class ParticleFilter {
