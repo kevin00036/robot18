@@ -105,10 +105,37 @@ void LocalizationModule::processFrame() {
 
   // Process the current frame and retrieve our location/orientation estimate
   // from the particle filter
-  pfilter_->processFrame();
+  //auto& beacon = cache_.world_object->objects_[WO_BEACON_BLUE_YELLOW];
+  /*
+  */
+  vector<vector<float> > beacon_data;
+  static map<WorldObjectType,vector<int>> beacons = {
+    {WO_BEACON_BLUE_YELLOW, {1500,1000}},
+    {WO_BEACON_YELLOW_BLUE, {1500,-1000}},
+    {WO_BEACON_BLUE_PINK, {0,1000}},
+    {WO_BEACON_PINK_BLUE, {0,-1000}},
+    {WO_BEACON_PINK_YELLOW, {-1500,1000}},
+    {WO_BEACON_YELLOW_PINK, {-1500,-1000}}
+  };
+  for(auto beacon : beacons) {
+    auto& object = cache_.world_object->objects_[beacon.first];
+    if(object.seen)
+      beacon_data.push_back( {object.visionDistance, object.visionBearing, beacon.second[0], beacon.second[1]} );
+  }
+
+  pfilter_->processFrame(beacon_data);
+
   self.loc = pfilter_->pose().translation;
   self.orientation = pfilter_->pose().rotation;
-  tlog(40, "Localization Update: x=%2.f, y=%2.f, theta=%2.2f", self.loc.x, self.loc.y, self.orientation * RAD_T_DEG);
+  tlog(40, "Localization Update: x=%.2f, y=%.2f, theta=%.2f", self.loc.x, self.loc.y, self.orientation * RAD_T_DEG);
+
+
+
+
+
+
+
+
 
   // Calculate the time delta from last frame to this frame, and update the
   // kalman filter
