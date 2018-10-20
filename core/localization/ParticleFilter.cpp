@@ -5,6 +5,12 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
+double normAngle(double x) {
+  while(x >= M_PI) x -= 2 * M_PI;
+  while(x < -M_PI) x += 2 * M_PI;
+  return x;
+}
+
 ParticleFilter::ParticleFilter(MemoryCache& cache, TextLogger*& tlogger) 
   : cache_(cache), tlogger_(tlogger), dirty_(true) {
 }
@@ -16,7 +22,7 @@ void ParticleFilter::init(Point2D loc, float orientation) {
   for(auto& p : particles()) {
     p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
     p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
-    p.t = Random::inst().sampleU() *2*M_PI;  //0., M_PI / 4);
+    p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);  //0., M_PI / 4);
     p.w = Random::inst().sampleU();
   }
 }
@@ -48,7 +54,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   for(auto& p : particles()) {
     p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*30;
     p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*30;
-    p.t = p.t + dth + Random::inst().sampleN()*M_PI/20;
+    p.t = normAngle(p.t + dth + Random::inst().sampleN()*M_PI/20);
   }  
   
   for(auto& beacon : beacon_data) {
@@ -65,11 +71,11 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
       pardist = hypot(p.x - beacon[2], p.y - beacon[3]);
       parbear = atan2(beacon[3] - p.y, beacon[2] - p.x) - p.t;
  
-      // TODO: Angle 2*PI issue
       VectorObs mu_, st_;
       MatrixObs cov_;
-      mu_ << visdist, visbear;
-      st_ << pardist, parbear;
+      double dth = normAngle(visbear - parbear);
+      mu_ << visdist, 0.;
+      st_ << pardist, dth;
       cov_ = MatrixObs::Zero();
       cov_(0, 0) = 100 * 100;
       cov_(1, 1) = M_PI/20 * M_PI/20;
