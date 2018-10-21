@@ -54,7 +54,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   for(auto& p : particles()) {
     p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*30;
     p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*30;
-    p.t = normAngle(p.t + dth + Random::inst().sampleN()*M_PI/20);
+    p.t = normAngle(p.t + dth + Random::inst().sampleN()*M_PI/50);
   }  
   
   for(auto& beacon : beacon_data) {
