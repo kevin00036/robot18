@@ -141,7 +141,7 @@ void ImageProcessor::processFrame(){
   //return;
   buildBlobs();
 
-  //processBeaconCandidates();
+  processBeaconCandidates();
   processBallCandidates();
   processGoalCandidates();
 
@@ -378,7 +378,7 @@ void ImageProcessor::buildBlobs() {
         //tlog(30, "Color %d Size %d [%d~%d] x [%d~%d] Density %.3f", clr, blobSize, xmin, xmax, ymin, ymax, density);
 
       //beacon
-      if(0)
+      //if(0)
       if(blobSize >= 15 and (clr == c_YELLOW or clr == c_BLUE or clr == c_PINK)) {
         auto bc = BallCandidate();
         //bc.centerX = (xmin + xmax) / 2;
@@ -401,9 +401,6 @@ void ImageProcessor::buildBlobs() {
           beaconCandidates.push_back(bc);
         }
       }
-
-
-
 
       //goal
       //if(blobSize >= 2000 and clr == c_BLUE) {
