@@ -102,7 +102,7 @@ void LocalizationModule::processFrame() {
   for(auto beacon : beacons) {
     auto& object = cache_.world_object->objects_[beacon.first];
     if(object.seen)
-      beacon_data.push_back( {object.visionDistance, object.visionBearing, beacon.second[0], beacon.second[1]} );
+      beacon_data.push_back( {object.distance, object.visionBearing, beacon.second[0], beacon.second[1]} );
   }
 
   pfilter_->processFrame(beacon_data);
