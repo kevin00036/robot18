@@ -5,10 +5,16 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
-double normAngle(double x) {
-  while(x >= M_PI) x -= 2 * M_PI;
-  while(x < -M_PI) x += 2 * M_PI;
+float normAngle(float x) {
+  while(x >= M_PIf) x -= 2 * M_PIf;
+  while(x < -M_PIf) x += 2 * M_PIf;
   return x;
+}
+
+long long get_time() {
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  return tp.tv_sec * 1000000LL + tp.tv_usec;
 }
 
 ParticleFilter::ParticleFilter(MemoryCache& cache, TextLogger*& tlogger) 
@@ -18,7 +24,7 @@ ParticleFilter::ParticleFilter(MemoryCache& cache, TextLogger*& tlogger)
 void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
-  particles().resize(300);
+  particles().resize(1000);
   for(auto& p : particles()) {
     p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
     p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
@@ -42,6 +48,7 @@ double calcGaussianLogProb(Matrix<double, D, 1> mu, Matrix<double, D, D> cov,
 void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   // Indicate that the cached mean needs to be updated
   dirty_ = true;
+  auto start_time = get_time();
 
   // Retrieve odometry update - how do we integrate this into the filter?
   const auto& disp = cache_.odometry->displacement;
@@ -52,83 +59,101 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   double dth = disp.rotation;
 
   for(auto& p : particles()) {
-    p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*50;
-    p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*50;
-    p.t = normAngle(p.t + dth + Random::inst().sampleN()*M_PI/50);
+    float cs = cosf(p.t), sn = sinf(p.t);
+    p.x = p.x + dx * cs - dy * sn + Random::inst().sampleN(0.f, 50.f);
+    p.y = p.y + dx * sn + dy * cs + Random::inst().sampleN(0.f, 50.f);
+    p.t = normAngle(p.t + dth + Random::inst().sampleN(0.f, M_PIf/50.f));
   }  
   
   for(auto& beacon : beacon_data) {
      tlog(30, "%.2f, %.2f, %.2f, %.2f", beacon[0], beacon[1], beacon[2], beacon[3]);
   }
 
-  double sumprob = 0;
+  float sumprob = 0;
   for(auto& p : particles()) {
-    double totalprob = 0;
+    float totallogprob = 0;
     for(auto& beacon : beacon_data) {
-      double visdist, visbear, pardist, parbear;
+      float visdist, visbear, pardist, parbear;
       visdist = beacon[0];
       visbear = beacon[1];
-      pardist = hypot(p.x - beacon[2], p.y - beacon[3]);
-      parbear = atan2(beacon[3] - p.y, beacon[2] - p.x) - p.t;
+      pardist = hypotf(p.x - beacon[2], p.y - beacon[3]);
+      parbear = atan2f(beacon[3] - p.y, beacon[2] - p.x) - p.t;
  
-      VectorObs mu_, st_;
-      MatrixObs cov_;
-      double dth = normAngle(visbear - parbear);
-      mu_ << visdist, 0.;
-      st_ << pardist, dth;
-      cov_ = MatrixObs::Zero();
-      double sigma_dist = 0.05 * max(visdist, 500.);
-      cov_(0, 0) = sigma_dist * sigma_dist;
-      cov_(1, 1) = M_PI/20 * M_PI/20;
-      double prob = calcGaussianLogProb<2>(mu_, cov_, st_);
-      totalprob += prob;
+      //VectorObs mu_, st_;
+      //MatrixObs cov_;
+      float ddis = visdist - pardist;
+      float dth = normAngle(visbear - parbear);
+      float sigma_dist = 0.05f * max(visdist, 500.f);
+      float sigma_theta = M_PIf / 20.f;
+      const float logSqrt2Pi = 0.5f * logf(2*M_PIf);
+      float logp_dist = -logSqrt2Pi - logf(sigma_dist) -(ddis * ddis) / (2 * sigma_dist * sigma_dist);
+      float logp_theta = -logSqrt2Pi - logf(sigma_theta) -(dth * dth) / (2 * sigma_theta * sigma_theta);
+      //mu_ << visdist, 0.;
+      //st_ << pardist, dth;
+      //cov_ = MatrixObs::Zero();
+      //sigma_dist = 100;
+      //cov_(0, 0) = sigma_dist * sigma_dist;
+      //cov_(1, 1) = M_PI/20 * M_PI/20;
+      //double prob = calcGaussianLogProb<2>(mu_, cov_, st_);
+      float logprob = logp_dist + logp_theta;
+      totallogprob += logprob;
     }
-    p.w = exp(totalprob);
+    p.w = expf(totallogprob);
     sumprob += p.w;
   }
 
   for (auto& p: particles())
     p.w /= sumprob;
   
-  vector<Particle> new_particle;
 
   auto& P = particles();
-  double M = P.size();
+  int M = P.size();
   double r = Random::inst().sampleU() / M;
   int i = 0;
   double c = P[0].w;
 
+  vector<Particle> new_particle(M);
+
   for(int m=0; m<M; m++){
-    double u = (r + m/M) / 0.99;
+    double u = (r + m/(double)M) / 0.99;
     while(u > c and i < M-1){
       i = i + 1;
       c = c + P[i].w;
     }
     if (u <= c)
-      new_particle.push_back(P[i]);
+      new_particle[m] = P[i];
     else
-      new_particle.push_back({
-                             Random::inst().sampleU(-2500.f, 2500.f), 
-                             Random::inst().sampleU(-1250.f, 1250.f),
-                             Random::inst().sampleU(-(float)M_PI, (float)M_PI)});
+      new_particle[m] = {
+        Random::inst().sampleU(-2500.f, 2500.f), 
+        Random::inst().sampleU(-1250.f, 1250.f),
+        Random::inst().sampleU(-M_PIf, M_PIf)};
 
-    new_particle.back().w = 1.;
+    new_particle[m].w = 1.f;
   }
   tlog(30,"Particle Size %d",new_particle.size());
-  cache_.localization_mem->particles = new_particle;
+  cache_.localization_mem->particles.swap(new_particle);
+
+  auto end_time = get_time();
+  int proc_time = (end_time - start_time) / 100;
+  cout<<"PF Time = "<<proc_time<<proc_time/10.<<"ms"<<endl;
+
 }
 
 const Pose2D& ParticleFilter::pose() const {
   if(dirty_) {
     // Compute the mean pose estimate
     mean_ = Pose2D();
+    double sumsin = 0, sumcos = 0;
     using T = decltype(mean_.translation);
     for(const auto& p : particles()) {
       mean_.translation += T(p.x,p.y);
-      mean_.rotation += p.t;
+      //mean_.rotation += p.t;
+      sumcos += cos(p.t);
+      sumsin += sin(p.t);
     }
     if(particles().size() > 0)
       mean_ /= static_cast<float>(particles().size());
+    mean_.rotation = atan2(sumsin, sumcos);
     dirty_ = false;
   }
   return mean_;

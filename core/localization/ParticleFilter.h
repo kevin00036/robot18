@@ -6,12 +6,18 @@
 #include <localization/Logging.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <sys/time.h>
+
 using namespace Eigen;
 
 typedef Matrix<double, 2, 2> MatrixObs;
 typedef Matrix<double, 2, 1> VectorObs;
 
-double normAngle(double x);
+const float M_PIf = M_PI;
+
+float normAngle(float x);
+
+long long get_time();
 
 class ParticleFilter {
   public:
