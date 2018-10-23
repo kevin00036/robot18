@@ -52,8 +52,8 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   double dth = disp.rotation;
 
   for(auto& p : particles()) {
-    p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*30;
-    p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*30;
+    p.x = p.x + dx * cos(p.t) - dy * sin(p.t) + Random::inst().sampleN()*50;
+    p.y = p.y + dx * sin(p.t) + dy * cos(p.t) + Random::inst().sampleN()*50;
     p.t = normAngle(p.t + dth + Random::inst().sampleN()*M_PI/50);
   }  
   
@@ -77,7 +77,8 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
       mu_ << visdist, 0.;
       st_ << pardist, dth;
       cov_ = MatrixObs::Zero();
-      cov_(0, 0) = 100 * 100;
+      double sigma_dist = 0.05 * max(visdist, 500.);
+      cov_(0, 0) = sigma_dist * sigma_dist;
       cov_(1, 1) = M_PI/20 * M_PI/20;
       double prob = calcGaussianLogProb<2>(mu_, cov_, st_);
       totalprob += prob;

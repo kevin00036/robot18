@@ -719,6 +719,7 @@ void ImageProcessor::buildBlobs() {
           double dis = lb;
           object.visionDistance = dis; //cmatrix_.groundDistance(position);
           object.distance = dis;
+          object.visionDistance = dis;
           object.occlude = box[6];
           tlog(30,"%d",box[6]);
 
