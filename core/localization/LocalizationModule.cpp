@@ -3,8 +3,12 @@
 #include <memory/LocalizationBlock.h>
 #include <memory/GameStateBlock.h>
 #include <memory/RobotStateBlock.h>
+#include <memory/RobotStateBlock.h>
 #include <localization/ParticleFilter.h>
 #include <localization/Logging.h>
+
+#include <memory/BodyModelBlock.h>
+#include <memory/WalkRequestBlock.h>
 
 // Boilerplate
 LocalizationModule::LocalizationModule() : tlogger_(textlogger), pfilter_(new ParticleFilter(cache_, tlogger_)), \
@@ -24,6 +28,9 @@ void LocalizationModule::specifyMemoryDependency() {
   requiresMemoryBlock("robot_state");
   requiresMemoryBlock("game_state");
   requiresMemoryBlock("vision_odometry");
+
+  requiresMemoryBlock("body_model");
+  requiresMemoryBlock("walk_request");
 }
 
 // Boilerplate
@@ -34,6 +41,9 @@ void LocalizationModule::specifyMemoryBlocks() {
   getOrAddMemoryBlock(cache_.robot_state,"robot_state");
   getOrAddMemoryBlock(cache_.game_state,"game_state");
   getOrAddMemoryBlock(cache_.odometry,"vision_odometry");
+
+  getOrAddMemoryBlock(cache_.body_model,"body_model");
+  getOrAddMemoryBlock(cache_.walk_request,"walk_request");
 }
 
 
@@ -89,6 +99,20 @@ void LocalizationModule::processFrame() {
 
   // Process the current frame and retrieve our location/orientation estimate
   // from the particle filter
+  bool flying = cache_.body_model->feet_on_ground_;
+  bool flying_inst = cache_.body_model->feet_on_ground_inst_;
+  tlog(30, "flying: %d %d", flying, flying_inst);
+
+  Pose2D speed = cache_.walk_request->speed_;
+  tlog(30, "speed: %.2d %.2d %.2d", speed.translation[0], speed.translation[1], speed.rotation);
+  
+  self.vx = speed.translation[0];
+  self.vy = speed.translation[1];
+  self.vth = speed.rotation;
+
+  self.flying = flying;
+  self.flying_inst = flying_inst;
+
 
   vector<vector<float> > beacon_data;
   static map<WorldObjectType,vector<int>> beacons = {
@@ -102,7 +126,7 @@ void LocalizationModule::processFrame() {
   for(auto beacon : beacons) {
     auto& object = cache_.world_object->objects_[beacon.first];
     if(object.seen)
-      beacon_data.push_back( {object.distance, object.visionBearing, beacon.second[0], beacon.second[1]} );
+      beacon_data.push_back( {object.visionDistance, object.visionBearing, beacon.second[0], beacon.second[1]} );
   }
 
   pfilter_->processFrame(beacon_data);

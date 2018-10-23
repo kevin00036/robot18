@@ -47,32 +47,22 @@ class Playing(Task):
         commands.setHeadPan(headth, 0.1)
         
         headth = headth + dth
-        if headth > 1.8:
+        if headth > 0.9:
             dth = -dth
-        if headth < -1.8:
+        if headth < -0.9:
             dth = -dth
             
 
-        robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
-        # print(self.loc.x, self.loc.y, self.orientation)
+        self = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
+        print(self.loc.x, self.loc.y, self.orientation)
 
-        x = robot.loc.x
-        y = robot.loc.y
-        th = robot.orientation
+        x = self.loc.x
+        y = self.loc.y
+        th = self.orientation
 
-        dis = math.sqrt(x*x+y*y)
-        vabs = min(0.3, dis)
+        vx = math.sqrt(x*x+y*y)
         vw = normAngle(math.atan2(-y,-x) - th)
+        vx = clip(vx, 0.2)
+        vw = clip(vw, 0.2)
 
-        vx = (+ (-x) * math.cos(th) + (-y) * math.sin(th)) / dis * vabs
-        vy = (- (-x) * math.sin(th) + (-y) * math.cos(th)) / dis * vabs
-
-        # vx = clip(vx, 0.2)
-        # vy = clip(vy, 0.2)
-        if dis > 100:
-            vw = clip(vw, 0.2)
-        else:
-            vw = 0.
-        # vw = 0.
-
-        commands.setWalkVelocity(vx, vy, vw)
+        commands.setWalkVelocity(vx, 0, vw)

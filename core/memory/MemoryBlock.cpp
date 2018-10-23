@@ -37,8 +37,10 @@ bool MemoryBlock::checkOwner(const std::string &name, MemoryOwner::Owner expect_
       //std::cout << "checkOwner: no exit" << std::endl;
       return false;
     }
+    /*
     std::cerr << "BAD OWNER FOR: " << name << " expected: " <<  expect_owner << " " << " got: " << owner << std::endl;
     exit(1);
+    */
   }
   return true;
 }

@@ -414,6 +414,13 @@ DECLARE_INTERNAL_SCHEMA(class WorldObject {
     SCHEMA_FIELD(bool ballMoved); ///< This is only used by the keeper during penalty kicks.
 
     SCHEMA_FIELD(bool fromTopCamera); ///< True if observed from top cam, false if from bottom
+
+
+    SCHEMA_FIELD(float vx); ///< The object's location in global field coordinates.
+    SCHEMA_FIELD(float vy); ///< The object's location in global field coordinates.
+    SCHEMA_FIELD(float vth); ///< The object's location in global field coordinates.
+    SCHEMA_FIELD(bool flying); ///< The object's location in global field coordinates.
+    SCHEMA_FIELD(bool flying_inst); ///< The object's location in global field coordinates.
 });
 
 typedef std::vector<WorldObject> ObjectSet;

@@ -1,5 +1,3 @@
-"""Sample behavior."""
-
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -11,20 +9,12 @@ import cfgstiff
 from task import Task
 from state_machine import Node, C, T, StateMachine
 
-ptime = 0
+
 class Ready(Task):
     def run(self):
-        commands.setStiffness()       #commands.standStraight()
+        commands.standStraight()
         if self.getTime() > 5.0:
             memory.speech.say("ready to play")
-            self.finish()
-
-class Set(Task):
-    def run(self):
-        commands.setStiffness(cfgstiff.Zero)
-        if self.getTime() > 5.0:
-            memory.speech.say("Set stiffness to Hong-Shi")
-            print('Set Stiffness Hong-Shi')
             self.finish()
 
 
@@ -38,16 +28,15 @@ class Playing(StateMachine):
 
     class Walk(Node):
         def run(self):
-            ptime = self.getTime()
-            print('time: ', ptime)
+            #self = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
+            #print(self.vx, self.vy, self.vth, self.flying, self.flying_inst)
+            commands.setWalkVelocity(0.1, 0, 0)
 
     class Off(Node):
         def run(self):
-            print('Omi', self.getTime())
             commands.setStiffness(cfgstiff.Zero)
             if self.getTime() > 2.0:
                 memory.speech.say("turned off stiffness")
-                print('OMIFINISH')
                 self.finish()
 
     def setup(self):
@@ -55,4 +44,5 @@ class Playing(StateMachine):
         walk = self.Walk()
         sit = pose.Sit()
         off = self.Off()
-        self.trans(stand, C, walk, T(2.0), off, C)
+        self.trans(stand, C, walk, T(5.0), sit, C, off)
+
