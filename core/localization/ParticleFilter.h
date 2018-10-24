@@ -31,6 +31,8 @@ class ParticleFilter {
     inline const std::array<Particle, PARTICLE_NUM>& particles() const {
       return cache_.localization_mem->particles;
     }
+    Pose2D mean_shift() const;
+    float kernel(float, float, float, float, float sigma=250) const;
 
   protected:
     inline std::array<Particle, PARTICLE_NUM>& particles() {

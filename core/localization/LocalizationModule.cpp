@@ -116,7 +116,7 @@ void LocalizationModule::processFrame() {
 
 
   vector<vector<float> > beacon_data;
-  static map<WorldObjectType,vector<int>> beacons = {
+  static map<WorldObjectType,vector<float>> beacons = {
     {WO_BEACON_BLUE_YELLOW, {1500,1000}},
     {WO_BEACON_YELLOW_BLUE, {1500,-1000}},
     {WO_BEACON_BLUE_PINK, {0,1000}},

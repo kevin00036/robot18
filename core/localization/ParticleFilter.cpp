@@ -153,7 +153,8 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
 const Pose2D& ParticleFilter::pose() const {
   if(dirty_) {
     // Compute the mean pose estimate
-    mean_ = Pose2D();
+    //mean_ = Pose2D();
+    mean_ = mean_shift();
     double sumsin = 0, sumcos = 0;
     using T = decltype(mean_.translation);
     for(const auto& p : particles()) {
@@ -170,4 +171,44 @@ const Pose2D& ParticleFilter::pose() const {
   return mean_;
 }
 
+Pose2D ParticleFilter::mean_shift() const {
+  float mx = 0, my = 0, mt;
+  int N = PARTICLE_NUM;
+  for(auto &p: particles()) {
+    mx += p.x;
+    my += p.y;
+  }
+  mx /= N;
+  my /= N;
+  tlog(30, "Iteration %d Mean (%.5f, %.5f)", 0, mx, my);
 
+  for(int t=0; t<20; t++) {
+    float sumx = 0, sumy = 0, sumw = 0;
+
+    for(auto &p: particles()) {
+      float w = kernel(mx, my, p.x, p.y);
+      sumx += w * p.x;
+      sumy += w * p.y;
+      sumw += w;
+    }
+    mx = sumx / sumw;
+    my = sumy / sumw;
+    tlog(30, "Iteration %d Mean (%.5f, %.5f)", t+1, mx, my);
+  }
+
+  float sumsin = 0, sumcos = 0;
+  for(auto& p: particles()) {
+    float w = kernel(mx, my, p.x, p.y);
+    sumcos += w * cosf(p.t);
+    sumsin += w * sinf(p.t);
+  }
+  mt = atan2f(sumsin, sumcos);
+  
+  return Pose2D(mx, my, mt);
+}
+
+float ParticleFilter::kernel(float x1, float y1, float x2, float y2, float sigma) const {
+  float dis = (x1-x2) * (x1-x2) + (y1-y2) * (y1-y2);
+  const float sqrt2Pi = sqrtf(2 * M_PIf);
+  return expf(-dis / (2.f * sigma * sigma)) / (sqrt2Pi * sigma);
+}
