@@ -153,19 +153,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
 const Pose2D& ParticleFilter::pose() const {
   if(dirty_) {
     // Compute the mean pose estimate
-    //mean_ = Pose2D();
     mean_ = mean_shift();
-    double sumsin = 0, sumcos = 0;
-    using T = decltype(mean_.translation);
-    for(const auto& p : particles()) {
-      mean_.translation += T(p.x,p.y);
-      //mean_.rotation += p.t;
-      sumcos += cos(p.t);
-      sumsin += sin(p.t);
-    }
-    if(particles().size() > 0)
-      mean_ /= static_cast<float>(particles().size());
-    mean_.rotation = atan2(sumsin, sumcos);
     dirty_ = false;
   }
   return mean_;
@@ -204,7 +192,7 @@ Pose2D ParticleFilter::mean_shift() const {
   }
   mt = atan2f(sumsin, sumcos);
   
-  return Pose2D(mx, my, mt);
+  return Pose2D(mt, mx, my);
 }
 
 float ParticleFilter::kernel(float x1, float y1, float x2, float y2, float sigma) const {
