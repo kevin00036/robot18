@@ -26,7 +26,7 @@ class ParticleFilter {
   public:
     ParticleFilter(MemoryCache& cache, TextLogger*& tlogger);
     void init(Point2D loc, float orientation);
-    void processFrame(vector< vector<float> >, bool, bool);
+    void processFrame(vector< vector<float> >, bool, bool, bool);
     const Pose2D& pose() const;
     inline const std::array<Particle, PARTICLE_NUM>& particles() const {
       return cache_.localization_mem->particles;

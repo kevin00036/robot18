@@ -109,7 +109,8 @@ void LocalizationModule::processFrame() {
   self.vx = speed.translation[0];
   self.vy = speed.translation[1];
   self.vth = speed.rotation;
-  bool stopped = (self.vx == 0 and self.vy == 0 and self.vth == 0);
+  bool stopped = (self.vx == 0 and self.vy == 0);
+  bool stopped_th = (self.vth == 0);
 
   self.flying = flying;
   self.flying_inst = flying_inst;
@@ -130,7 +131,7 @@ void LocalizationModule::processFrame() {
       beacon_data.push_back( {object.visionDistance, object.visionBearing, beacon.second[0], beacon.second[1]} );
   }
 
-  pfilter_->processFrame(beacon_data, stopped, flying);
+  pfilter_->processFrame(beacon_data, stopped, stopped_th, flying);
 
   self.loc = pfilter_->pose().translation;
   self.orientation = pfilter_->pose().rotation;

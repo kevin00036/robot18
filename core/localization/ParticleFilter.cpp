@@ -44,7 +44,7 @@ double calcGaussianLogProb(Matrix<double, D, 1> mu, Matrix<double, D, D> cov,
   return -0.5 * quadform - D * logSqrt2Pi - log(L.determinant());
 }
 
-void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopped, bool flying) {
+void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopped, bool stopped_th, bool flying) {
   // Indicate that the cached mean needs to be updated
   dirty_ = true;
   auto start_time = get_time();
@@ -66,9 +66,11 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
     p.y = p.y + dx * sn + dy * cs;
     p.t = normAngle(p.t + dth);
 
-    if(!stopped or true) {
+    if(!stopped) {
       p.x = p.x + Random::inst().sampleN(0.f, MOTION_ERR);
       p.y = p.y + Random::inst().sampleN(0.f, MOTION_ERR);
+    }
+    if(!stopped_th) {
       p.t = normAngle(p.t + Random::inst().sampleN(0.f, MOTION_ERR_TH));
     }
   }  
@@ -123,7 +125,8 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
   array<Particle, PARTICLE_NUM> new_particle;
 
   for(int m=0; m<M; m++){
-    double u = (r + m/(double)M) / 0.997;
+    double u = (r + m/(double)M);
+    if(!stopped) u /= 0.997;
     while(u > c and i < M-1){
       i = i + 1;
       c = c + P[i].w;
