@@ -25,9 +25,9 @@ void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
   for(auto& p : particles()) {
-    p.x = Random::inst().sampleU(-2500.f, 2500.f); //static_cast<int>(frame * 5), 250);
-    p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
-    p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);  //0., M_PI / 4);
+    p.x = Random::inst().sampleU(-2500.f, 2500.f);
+    p.y = Random::inst().sampleU(-1250.f, 1250.f);
+    p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);
     p.w = 1.;
   }
 }
@@ -97,8 +97,6 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
       pardist = hypotf(p.x - beacon[2], p.y - beacon[3]);
       parbear = atan2f(beacon[3] - p.y, beacon[2] - p.x) - p.t;
  
-      //VectorObs mu_, st_;
-      //MatrixObs cov_;
       float ddis = visdist - pardist;
       float dth = normAngle(visbear - parbear);
       float sigma_dist  = SENSOR_ERR * max(visdist, 500.f);
@@ -106,13 +104,6 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
       const float logSqrt2Pi = 0.5f * logf(2*M_PIf);
       float logp_dist = -logSqrt2Pi - logf(sigma_dist) -(ddis * ddis) / (2 * sigma_dist * sigma_dist);
       float logp_theta = -logSqrt2Pi - logf(sigma_theta) -(dth * dth) / (2 * sigma_theta * sigma_theta);
-      //mu_ << visdist, 0.;
-      //st_ << pardist, dth;
-      //cov_ = MatrixObs::Zero();
-      //sigma_dist = 100;
-      //cov_(0, 0) = sigma_dist * sigma_dist;
-      //cov_(1, 1) = M_PI/20 * M_PI/20;
-      //double prob = calcGaussianLogProb<2>(mu_, cov_, st_);
       float logprob = logp_dist + logp_theta;
       totallogprob += logprob;
     }
@@ -123,7 +114,6 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
   for (auto& p: particles())
     p.w /= sumprob;
   
-
   auto& P = particles();
   int M = P.size();
   double r = Random::inst().sampleU() / M;
@@ -158,7 +148,6 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
   cout<<(stopped ? "STOPPED " : "        ");
   cout<<(flying ? "FLYING " : "       ");
   cout<<endl;
-
 }
 
 const Pose2D& ParticleFilter::pose() const {

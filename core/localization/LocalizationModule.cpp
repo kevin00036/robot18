@@ -80,7 +80,6 @@ void LocalizationModule::reInit() {
   kfilter_->reset();
   cache_.world_object->objects_[cache_.robot_state->WO_SELF].orientation = 0.;
   last_frame_time = clock();
-  ball_seen_counter = 0;
 }
 
 void LocalizationModule::moveBall(const Point2D& position) {
@@ -115,7 +114,6 @@ void LocalizationModule::processFrame() {
   self.flying = flying;
   self.flying_inst = flying_inst;
 
-
   vector<vector<float> > beacon_data;
   static map<WorldObjectType,vector<float>> beacons = {
     {WO_BEACON_BLUE_YELLOW, {1500,1000}},
@@ -141,5 +139,4 @@ void LocalizationModule::processFrame() {
   // Calculate the time delta from last frame to this frame
   double delta_t = (clock() - last_frame_time) / (double)CLOCKS_PER_SEC;
   last_frame_time = clock();
-
 }
