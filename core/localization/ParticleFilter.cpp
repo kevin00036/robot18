@@ -25,7 +25,7 @@ void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
   for(auto& p : particles()) {
-    p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
+    p.x = Random::inst().sampleU(-2500.f, 2500.f); //static_cast<int>(frame * 5), 250);
     p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
     p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);  //0., M_PI / 4);
     p.w = 1.;
