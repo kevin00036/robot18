@@ -10,10 +10,13 @@
 
 using namespace Eigen;
 
-typedef Matrix<double, 2, 2> MatrixObs;
-typedef Matrix<double, 2, 1> VectorObs;
 
 const float M_PIf = M_PI;
+const float SENSOR_ERR    = 0.1f;
+const float SENSOR_ERR_TH = M_PIf / 10.f;
+const float MOTION_ERR    = 20.f;
+const float MOTION_ERR_TH = M_PIf / 100.f;
+
 
 float normAngle(float x);
 
@@ -23,7 +26,7 @@ class ParticleFilter {
   public:
     ParticleFilter(MemoryCache& cache, TextLogger*& tlogger);
     void init(Point2D loc, float orientation);
-    void processFrame(vector< vector<float> >);
+    void processFrame(vector< vector<float> >, bool, bool);
     const Pose2D& pose() const;
     inline const std::vector<Particle>& particles() const {
       return cache_.localization_mem->particles;

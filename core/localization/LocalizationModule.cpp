@@ -99,8 +99,8 @@ void LocalizationModule::processFrame() {
 
   // Process the current frame and retrieve our location/orientation estimate
   // from the particle filter
-  bool flying = cache_.body_model->feet_on_ground_;
-  bool flying_inst = cache_.body_model->feet_on_ground_inst_;
+  bool flying = not cache_.body_model->feet_on_ground_;
+  bool flying_inst = not cache_.body_model->feet_on_ground_inst_;
   tlog(30, "flying: %d %d", flying, flying_inst);
 
   Pose2D speed = cache_.walk_request->speed_;
@@ -109,6 +109,7 @@ void LocalizationModule::processFrame() {
   self.vx = speed.translation[0];
   self.vy = speed.translation[1];
   self.vth = speed.rotation;
+  bool stopped = (self.vx == 0 and self.vy == 0 and self.vth == 0);
 
   self.flying = flying;
   self.flying_inst = flying_inst;
@@ -129,7 +130,7 @@ void LocalizationModule::processFrame() {
       beacon_data.push_back( {object.visionDistance, object.visionBearing, beacon.second[0], beacon.second[1]} );
   }
 
-  pfilter_->processFrame(beacon_data);
+  pfilter_->processFrame(beacon_data, stopped, flying);
 
   self.loc = pfilter_->pose().translation;
   self.orientation = pfilter_->pose().rotation;

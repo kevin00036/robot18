@@ -63,6 +63,8 @@ class Playing(Task):
         dis = math.sqrt(x*x+y*y)
         vabs = min(0.3, dis)
         vw = normAngle(math.atan2(-y,-x) - th)
+        if abs(vw) < 0.05:
+            vw = 0
 
         vx = (+ (-x) * math.cos(th) + (-y) * math.sin(th)) / dis * vabs
         vy = (- (-x) * math.sin(th) + (-y) * math.cos(th)) / dis * vabs

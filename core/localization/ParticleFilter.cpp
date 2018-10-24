@@ -29,7 +29,7 @@ void ParticleFilter::init(Point2D loc, float orientation) {
     p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
     p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
     p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);  //0., M_PI / 4);
-    p.w = Random::inst().sampleU();
+    p.w = 1.;
   }
 }
 
@@ -45,10 +45,12 @@ double calcGaussianLogProb(Matrix<double, D, 1> mu, Matrix<double, D, D> cov,
   return -0.5 * quadform - D * logSqrt2Pi - log(L.determinant());
 }
 
-void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
+void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopped, bool flying) {
   // Indicate that the cached mean needs to be updated
   dirty_ = true;
   auto start_time = get_time();
+  if(flying)
+    init({0.f, 0.f}, 0.f);
 
   // Retrieve odometry update - how do we integrate this into the filter?
   const auto& disp = cache_.odometry->displacement;
@@ -58,11 +60,18 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
   double dy = disp.translation.y;
   double dth = disp.rotation;
 
+
   for(auto& p : particles()) {
     float cs = cosf(p.t), sn = sinf(p.t);
-    p.x = p.x + dx * cs - dy * sn + Random::inst().sampleN(0.f, 50.f);
-    p.y = p.y + dx * sn + dy * cs + Random::inst().sampleN(0.f, 50.f);
-    p.t = normAngle(p.t + dth + Random::inst().sampleN(0.f, M_PIf/50.f));
+    p.x = p.x + dx * cs - dy * sn;
+    p.y = p.y + dx * sn + dy * cs;
+    p.t = normAngle(p.t + dth);
+
+    if(stopped) {
+      p.x = p.x + Random::inst().sampleN(0.f, MOTION_ERR);
+      p.y = p.y + Random::inst().sampleN(0.f, MOTION_ERR);
+      p.t = normAngle(p.t + Random::inst().sampleN(0.f, MOTION_ERR_TH));
+    }
   }  
   
   for(auto& beacon : beacon_data) {
@@ -83,8 +92,8 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data) {
       //MatrixObs cov_;
       float ddis = visdist - pardist;
       float dth = normAngle(visbear - parbear);
-      float sigma_dist = 0.05f * max(visdist, 500.f);
-      float sigma_theta = M_PIf / 20.f;
+      float sigma_dist  = SENSOR_ERR * max(visdist, 500.f);
+      float sigma_theta = SENSOR_ERR_TH;
       const float logSqrt2Pi = 0.5f * logf(2*M_PIf);
       float logp_dist = -logSqrt2Pi - logf(sigma_dist) -(ddis * ddis) / (2 * sigma_dist * sigma_dist);
       float logp_theta = -logSqrt2Pi - logf(sigma_theta) -(dth * dth) / (2 * sigma_theta * sigma_theta);
