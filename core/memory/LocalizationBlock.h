@@ -7,6 +7,7 @@
 #include <schema/gen/LocalizationBlock_generated.h>
 #define STATE_SIZE 4
 #define COV_SIZE (STATE_SIZE * STATE_SIZE)
+#define PARTICLE_NUM 1000
 #define MAX_MODELS_IN_MEM 1
 #define MODEL_STATE_SIZE (MAX_MODELS_IN_MEM * STATE_SIZE)
 #define MODEL_COV_SIZE (MAX_MODELS_IN_MEM * STATE_SIZE * STATE_SIZE)
@@ -25,6 +26,9 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
 
     mutable SCHEMA_FIELD(std::array<float, COV_SIZE> covariance_data);
     Eigen::Matrix<float, STATE_SIZE, STATE_SIZE, Eigen::DontAlign> covariance;
+
+    //mutable SCHEMA_FIELD(std::array<float, PARTICLE_NUM * 4> particles_data);
+    std::array<Particle, PARTICLE_NUM> particles;
 
   SCHEMA_PRE_SERIALIZATION({
       std::copy(
@@ -56,7 +60,6 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
     Point2D getBallVel();
     Eigen::Matrix2f getBallCov();
     Eigen::Matrix2f getBallVelCov();
-    std::vector<Particle> particles;
     //SCHEMA_FIELD(std::vector<Particle> particles);
     //void serialize(StreamBuffer& buffer, std::string);
     //bool deserialize(const StreamBuffer& buffer, std::string);

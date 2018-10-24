@@ -171,7 +171,7 @@ void LocalizationGL::drawObservationLine(Vector3<float> origin, Vector3<float> e
   glEnable(GL_LIGHTING);
 }
 
-void LocalizationGL::drawParticles(const std::vector<Particle>& particles) {
+void LocalizationGL::drawParticles(const std::array<Particle, PARTICLE_NUM>& particles) {
   for(const auto& p : particles) {
     auto start = Point2D(p.x,p.y);
     auto end = start + Point2D::getPointFromPolar(100, p.t);

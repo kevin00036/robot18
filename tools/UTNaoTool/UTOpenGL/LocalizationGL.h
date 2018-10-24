@@ -23,7 +23,7 @@ public:
   void drawRelativeObjects(WorldObjectBlock* gtObjects, WorldObjectBlock* beliefObjects, RobotStateBlock* robotState);
   void drawRelativeObjectUncerts(WorldObjectBlock* gtObjects, WorldObjectBlock* beliefObjects, RobotStateBlock* robotState, LocalizationBlock* localization);
   void drawObservationLine(Vector3<float> origin, Vector3<float> end, RGB color);
-  void drawParticles(const std::vector<Particle>& particles);
+  void drawParticles(const std::array<Particle, PARTICLE_NUM>& particles);
  
   // Particle filter specific drawing  
   void drawOdometry(Point2D loc, AngRad ori, OdometryBlock* odometry);

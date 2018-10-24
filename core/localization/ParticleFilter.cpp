@@ -24,7 +24,6 @@ ParticleFilter::ParticleFilter(MemoryCache& cache, TextLogger*& tlogger)
 void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
-  particles().resize(1000);
   for(auto& p : particles()) {
     p.x = Random::inst().sampleU(-1750.f, 1750.f); //static_cast<int>(frame * 5), 250);
     p.y = Random::inst().sampleU(-1250.f, 1250.f); // 0., 250);
@@ -121,7 +120,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
   int i = 0;
   double c = P[0].w;
 
-  vector<Particle> new_particle(M);
+  array<Particle, PARTICLE_NUM> new_particle;
 
   for(int m=0; m<M; m++){
     double u = (r + m/(double)M) / 0.99;
@@ -140,7 +139,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
     new_particle[m].w = 1.f;
   }
   tlog(30,"Particle Size %d",new_particle.size());
-  cache_.localization_mem->particles.swap(new_particle);
+  cache_.localization_mem->particles = new_particle;
 
   auto end_time = get_time();
   int proc_time = (end_time - start_time) / 100;
