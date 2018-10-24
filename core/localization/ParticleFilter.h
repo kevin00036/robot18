@@ -29,6 +29,7 @@ class ParticleFilter {
     void processFrame(vector< vector<float> >, bool, bool);
     const Pose2D& pose() const;
     inline const std::array<Particle, PARTICLE_NUM>& particles() const {
+    Pose2D mean_shift() const;
       return cache_.localization_mem->particles;
     }
 
