@@ -70,8 +70,16 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
       p.x = p.x + Random::inst().sampleN(0.f, MOTION_ERR);
       p.y = p.y + Random::inst().sampleN(0.f, MOTION_ERR);
     }
+    else {
+      p.x = p.x + Random::inst().sampleN(0.f, MOTION_ERR*0.5f);
+      p.y = p.y + Random::inst().sampleN(0.f, MOTION_ERR*0.5f);
+    }
+
     if(!stopped_th) {
       p.t = normAngle(p.t + Random::inst().sampleN(0.f, MOTION_ERR_TH));
+    }
+    else {
+      p.t = normAngle(p.t + Random::inst().sampleN(0.f, MOTION_ERR_TH*0.5f));
     }
   }  
   

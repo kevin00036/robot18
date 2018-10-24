@@ -80,6 +80,7 @@ class Playing(Task):
             if headth >= 1.8:
                 state = 2
                 start_time = self.getTime()
+                dth = -abs(dth)
 
         elif state == 2:
             commands.setWalkVelocity(0, 0, 0.4)
@@ -91,10 +92,10 @@ class Playing(Task):
                 x = robot.loc.x
                 y = robot.loc.y
                 dis = math.sqrt(x*x+y*y)
-                if dis < 300:
-                    walk_time = 8.
+                if dis < 400:
+                    walk_time = 10.
                 else:
-                    walk_time = 15.
+                    walk_time = 20.
 
         elif state == 3:
             commands.setHeadPan(headth, 0.1)
