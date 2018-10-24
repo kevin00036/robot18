@@ -8,6 +8,7 @@
 #define STATE_SIZE 4
 #define COV_SIZE (STATE_SIZE * STATE_SIZE)
 #define PARTICLE_NUM 1000
+#define PARTICLE_DATA_SIZE (PARTICLE_NUM * 4)
 #define MAX_MODELS_IN_MEM 1
 #define MODEL_STATE_SIZE (MAX_MODELS_IN_MEM * STATE_SIZE)
 #define MODEL_COV_SIZE (MAX_MODELS_IN_MEM * STATE_SIZE * STATE_SIZE)
@@ -27,7 +28,7 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
     mutable SCHEMA_FIELD(std::array<float, COV_SIZE> covariance_data);
     Eigen::Matrix<float, STATE_SIZE, STATE_SIZE, Eigen::DontAlign> covariance;
 
-    //mutable SCHEMA_FIELD(std::array<float, PARTICLE_NUM * 4> particles_data);
+    mutable SCHEMA_FIELD(std::array<float, PARTICLE_DATA_SIZE> particles_data);
     std::array<Particle, PARTICLE_NUM> particles;
 
   SCHEMA_PRE_SERIALIZATION({
@@ -41,6 +42,11 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
         __source_object__.covariance.data() + __source_object__.covariance.size(), 
         __source_object__.covariance_data.data()
       );
+      memcpy(
+        __source_object__.particles_data.data(),
+        __source_object__.particles.data(), 
+        __source_object__.particles_data.size() * sizeof(float)
+      );
   });
   SCHEMA_POST_DESERIALIZATION({
       std::copy(
@@ -52,6 +58,11 @@ DECLARE_INTERNAL_SCHEMA(struct LocalizationBlock : public MemoryBlock {
         __target_object__.covariance_data.data(), 
         __target_object__.covariance_data.data() + __target_object__.covariance.size(), 
         __target_object__.covariance.data()
+      );
+      memcpy(
+        __target_object__.particles.data(), 
+        __target_object__.particles_data.data(),
+        __target_object__.particles_data.size() * sizeof(float)
       );
   });
 

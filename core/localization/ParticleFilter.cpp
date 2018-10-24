@@ -66,7 +66,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
     p.y = p.y + dx * sn + dy * cs;
     p.t = normAngle(p.t + dth);
 
-    if(stopped) {
+    if(!stopped or true) {
       p.x = p.x + Random::inst().sampleN(0.f, MOTION_ERR);
       p.y = p.y + Random::inst().sampleN(0.f, MOTION_ERR);
       p.t = normAngle(p.t + Random::inst().sampleN(0.f, MOTION_ERR_TH));
@@ -123,7 +123,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
   array<Particle, PARTICLE_NUM> new_particle;
 
   for(int m=0; m<M; m++){
-    double u = (r + m/(double)M) / 0.99;
+    double u = (r + m/(double)M) / 0.997;
     while(u > c and i < M-1){
       i = i + 1;
       c = c + P[i].w;
@@ -143,7 +143,10 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
 
   auto end_time = get_time();
   int proc_time = (end_time - start_time) / 100;
-  cout<<"PF Time = "<<proc_time<<proc_time/10.<<"ms"<<endl;
+  cout<<"PF Time = "<<proc_time/10.<<"ms ";
+  cout<<(stopped ? "STOPPED " : "        ");
+  cout<<(flying ? "FLYING " : "       ");
+  cout<<endl;
 
 }
 
