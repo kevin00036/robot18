@@ -1,3 +1,5 @@
+"""Sample behavior."""
+
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
@@ -28,9 +30,7 @@ class Playing(StateMachine):
 
     class Walk(Node):
         def run(self):
-            #self = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
-            #print(self.vx, self.vy, self.vth, self.flying, self.flying_inst)
-            commands.setWalkVelocity(0.1, 0, 0)
+            commands.setWalkVelocity(0.5, 0, 0)
 
     class Off(Node):
         def run(self):
@@ -45,4 +45,3 @@ class Playing(StateMachine):
         sit = pose.Sit()
         off = self.Off()
         self.trans(stand, C, walk, T(5.0), sit, C, off)
-

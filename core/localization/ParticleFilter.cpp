@@ -144,10 +144,13 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
 
   auto end_time = get_time();
   int proc_time = (end_time - start_time) / 100;
+
+  /*
   cout<<"PF Time = "<<proc_time/10.<<"ms ";
   cout<<(stopped ? "STOPPED " : "        ");
   cout<<(flying ? "FLYING " : "       ");
   cout<<endl;
+  */
 }
 
 const Pose2D& ParticleFilter::pose() const {

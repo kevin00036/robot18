@@ -64,16 +64,20 @@ const Point2D ownCrossLocation = Point2D(-PENALTY_CROSS_X, 0);
 const Point2D landmarkLocation[] = {
   Point2D(0, 0),  // center circle
 
-  Point2D(HALF_FIELD_X, HALF_FIELD_Y),       //  WO_BEACON_BLUE_YELLOW
-  Point2D(HALF_FIELD_X, -HALF_FIELD_Y),      //  WO_BEACON_YELLOW_BLUE,
-  Point2D(0, HALF_FIELD_Y),                  //  WO_BEACON_BLUE_PINK
-  Point2D(0, -HALF_FIELD_Y),                  //  WO_BEACON_PINK_BLUE
-  Point2D(-HALF_FIELD_X, HALF_FIELD_Y),      //  WO_BEACON_PINK_YELLOW
-  Point2D(-HALF_FIELD_X, -HALF_FIELD_Y),     //  WO_BEACON_YELLOW_PINK,
+  Point2D(2000, 1000),       //  WO_BEACON_BLUE_YELLOW
+  Point2D(2000, 1000),      //  WO_BEACON_YELLOW_BLUE,
+  Point2D(1500, -1000),                  //  WO_BEACON_BLUE_PINK
+  Point2D(1500, -1000),                  //  WO_BEACON_PINK_BLUE
+  Point2D(1000, 1000),      //  WO_BEACON_PINK_YELLOWi
+  Point2D(1000, 1000),     //  WO_BEACON_YELLOW_PINK,
 
+  
+  Point2D(0, 0),                 // WO_OWN_GOAL
+  Point2D(0, 0),                 // WO_OPP_GOAL
+  /*
   Point2D( -FIELD_X / 2, 0),                 // WO_OWN_GOAL
   Point2D( FIELD_X / 2, 0 ),                 // WO_OPP_GOAL
-
+  */
   Point2D( -FIELD_X / 2, -GOAL_Y / 2),       // WO_OWN_LEFT_GOALPOST
   Point2D( FIELD_X / 2, GOAL_Y / 2 ),        // WO_OPP_LEFT_GOALPOST
 

@@ -382,6 +382,8 @@ DECLARE_INTERNAL_SCHEMA(class WorldObject {
     SCHEMA_FIELD(bool left); ///< The hight of the object from the field floor.
     SCHEMA_FIELD(bool right); ///< The hight of the object from the field floor.
     SCHEMA_FIELD(bool center); ///< The hight of the object from the field floor.
+    SCHEMA_FIELD(float pos); ///< The hight of the object from the field floor.
+    SCHEMA_FIELD(float spos); ///< The hight of the object from the field floor.
 
     // for lines
     // for unknown lines this is the relative x,y (x in front, y to left) of the end points of the observed line segment
