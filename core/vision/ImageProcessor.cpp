@@ -146,7 +146,7 @@ void ImageProcessor::processFrame(){
   processGoalCandidates();
 
   detectBall();
-  //detectGoal();
+  detectGoal();
   //beacon_detector_->findBeacons();
 }
 
@@ -404,7 +404,6 @@ void ImageProcessor::buildBlobs() {
 
       //goal
       //if(blobSize >= 2000 and clr == c_BLUE) {
-      if(0)
       if(blobSize >= 500 and clr == c_BLUE) {
 
         auto bc = BallCandidate();
