@@ -30,7 +30,7 @@ class Playing(StateMachine):
 
     class Walk(Node):
         def run(self):
-            commands.setWalkVelocity(0.5, 0, 0)
+            commands.setWalkVelocity(0, 0.3, 0)
 
     class Off(Node):
         def run(self):

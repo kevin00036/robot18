@@ -25,7 +25,7 @@ void ParticleFilter::init(Point2D loc, float orientation) {
   mean_.translation = loc;
   mean_.rotation = orientation;
   for(auto& p : particles()) {
-    p.x = Random::inst().sampleU(-2500.f, 2500.f);
+    p.x = Random::inst().sampleU(0.f, 2500.f);
     p.y = Random::inst().sampleU(-1250.f, 1250.f);
     p.t = Random::inst().sampleU(-(float)M_PI, (float)M_PI);
     p.w = 1.;
@@ -133,7 +133,7 @@ void ParticleFilter::processFrame(vector<vector<float> > beacon_data, bool stopp
       new_particle[m] = P[i];
     else
       new_particle[m] = {
-        Random::inst().sampleU(-2500.f, 2500.f), 
+        Random::inst().sampleU(0.f, 2500.f), 
         Random::inst().sampleU(-1250.f, 1250.f),
         Random::inst().sampleU(-M_PIf, M_PIf)};
 

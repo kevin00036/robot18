@@ -90,10 +90,16 @@ void ButtonModule::processCenterPresses() {
   int state = game_state_->state();
 
 #ifdef USE_LAB_BUTTONS
+  /*
   if ((center_.presses == 3) || (center_.presses == 4)) {
     // always transition to finished
     game_state_->setState(SET);
     speech_->say("set");
+  }*/
+  if (center_.presses == 3) {
+    speech_->say("kick");
+  } else if (center_.presses == 4) {
+    speech_->say("block");
   } else if (center_.presses == 5) {
     game_state_->setState(FINISHED);
   } else if (center_.presses == 6) {

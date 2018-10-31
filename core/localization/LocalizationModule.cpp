@@ -224,8 +224,8 @@ void LocalizationModule::processFrame() {
   double d[2] = {0, 450};
 
   double c1[2] = {0, 0};
-  double d1[2] = {0, -500};
-  double c2[2] = {0, 500};
+  double d1[2] = {0, -700};
+  double c2[2] = {0, 700};
   double d2[2] = {0, 0};
   double c3[2] = {0, 180};
   double d3[2] = {0, -180};
