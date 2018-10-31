@@ -528,6 +528,7 @@ void ImageProcessor::buildBlobs() {
         double dis = lb;
         double disrat = dis / goal->visionDistance;
         goal->distance = dis;
+        goal->visionDistance = dis;
 
         if(dis>5000 or disrat < 0.3 or disrat > 3) goal->seen = false;
       }
@@ -823,7 +824,8 @@ void ImageProcessor::buildBlobs() {
       //Position p = cmatrix_.getWorldPosition(imageX, imageY, 50);
       ball->visionBearing = cmatrix_.bearing(p);
       ball->visionElevation = cmatrix_.elevation(p);
-      ball->visionDistance = cmatrix_.groundDistance(p);
+      //ball->visionDistance = cmatrix_.groundDistance(p);
+      ball->visionDistance = bc.groundDistance;
       ball->fromTopCamera = camera_ == Camera::TOP;
       ball->radius = bc.radius;
 
@@ -834,92 +836,10 @@ void ImageProcessor::buildBlobs() {
     }
 
     void ImageProcessor::detectGoal() {
-      //if(camera_ == Camera::BOTTOM)
-        //return;
-
-      //int imageX, imageY;
-      //double area;
-      //findGoal(imageX, imageY, area);
-      //if (imageX == -1) return; // function defined elsewhere that fills in imageX, imageY by reference
-      //WorldObject* goal = &vblocks_.world_object->objects_[WO_OWN_GOAL];
-
-      //goal->imageCenterX = imageX;
-      //goal->imageCenterY = imageY;
-
-      //Position p = cmatrix_.getWorldPosition(imageX, imageY, 280);
-      //goal->visionBearing = cmatrix_.bearing(p);
-      //goal->visionElevation = cmatrix_.elevation(p);
-      ////goal->visionDistance = area;
-      //goal->visionDistance = cmatrix_.groundDistance(p);
-      //goal->fromTopCamera = camera_ == Camera::TOP;
-
-      //goal->seen = true;
     }
 
     void ImageProcessor::findGoal(int& imageX, int& imageY, double& area) {
-      //imageX = imageY = -1;
-
-      //int total = 0;
-      //int sumx = 0, sumy = 0;
-      //int step = iparams_.width / 320; 
-
-      //int W = iparams_.width / step, H = iparams_.height / step;
-
-      //int xcnt[W] = {};
-      //int ycnt[H] = {};
-
-      //// Process from left to right
-      //for(int x = 0; x < iparams_.width; x+=step) {
-        //// Process from top to bottom
-        //for(int y = 0; y < iparams_.height; y+=step) {
-          //// Retrieve the segmented color of the pixel at (x,y)
-          //auto c = getSegImg()[y * iparams_.width + x];
-          //if(c == c_BLUE)
-          //{
-            //total++;
-            //sumx += x;
-            //sumy += y;
-            //xcnt[x/step]++;
-            //ycnt[y/step]++;
-          //}
-        //}
-      //}
-
-      //double ratio = (double) total / ((iparams_.width/step) * (iparams_.height/step));
-      //if (ratio > 0.02)
-      //{
-        //imageX = sumx / total;
-        //imageY = sumy / total;
-
-        //int xmin = -1, xmax = -1, ymin = -1, ymax = -1;
-        //int lth = 0.05 * total, rth = 0.95 * total;
-        //int cur = 0;
-        //for(int i=0; i<W; i++)
-        //{
-          //int ncur = cur + xcnt[i];
-          //if(cur < lth and ncur >= lth)
-            //xmin = i;
-          //if(cur < rth and ncur >= rth)
-            //xmax = i;
-          //cur = ncur;
-        //}
-        //cur = 0;
-        //for(int i=0; i<H; i++)
-        //{
-          //int ncur = cur + ycnt[i];
-          //if(cur < lth and ncur >= lth)
-            //ymin = i;
-          //if(cur < rth and ncur >= rth)
-            //ymax = i;
-          //cur = ncur;
-        //}
-
-        ////area = ratio;
-        //area = (double)((xmax - xmin) * (ymax - ymin)) / (W*H);
-        ////cout<<"["<<xmin*100/W<<"~"<<xmax*100/W<<"] x ["<<ymin*100/H<<"~"<<ymax*100/H<<"]"<<endl;
-      //}
     }
-
 
     int ImageProcessor::getTeamColor() {
       return vblocks_.robot_state->team_;
