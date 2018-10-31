@@ -96,17 +96,22 @@ void ButtonModule::processCenterPresses() {
     game_state_->setState(SET);
     speech_->say("set");
   }*/
-  if (center_.presses == 3) {
-    speech_->say("kick");
-  } else if (center_.presses == 4) {
-    speech_->say("block");
+  if (center_.presses == 1) {
+    speech_->say("Finished");
+    game_state_->setState(FINISHED);
+  } else if (center_.presses == 2) {
+    speech_->say("Kick");
+    game_state_->setState(PLAYING);
+  } else if (center_.presses == 3) {
+    speech_->say("Goalie");
+    game_state_->setState(PENALISED);
   } else if (center_.presses == 5) {
     game_state_->setState(FINISHED);
   } else if (center_.presses == 6) {
     sayIP();
   } else if (center_.presses == 7) {
     game_state_->setState(TESTING);
-  } else if (center_.presses == 8 or center_.presses == 2) {
+  } else if (center_.presses == 8 or center_.presses == 2000) {
     game_state_->isPenaltyKick = (not game_state_->isPenaltyKick);
     std::cout << "Changed isPenaltyKick to ";
     std::cout << (game_state_->isPenaltyKick ? "true" : "false") << std::endl;

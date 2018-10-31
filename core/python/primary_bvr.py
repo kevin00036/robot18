@@ -101,11 +101,12 @@ def load(bvr):
     """Import desired behavior module."""
     import importlib
     m = importlib.import_module('behaviors.' + bvr)
-    global Ready, Set, Playing, Testing
+    global Ready, Set, Playing, Testing, Penalised
     if hasattr(m, 'Ready'): Ready = m.Ready
     if hasattr(m, 'Set'): Set = m.Set
     if hasattr(m, 'Playing'): Playing = m.Playing
     if hasattr(m, 'Testing'): Testing = m.Testing
+    if hasattr(m, 'Penalised'): Penalised = m.Penalised
 
 
 class ManualControl(Task):
