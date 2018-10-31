@@ -136,12 +136,12 @@ void LocalizationModule::processFrame() {
 
   vector<vector<float> > beacon_data;
   static map<WorldObjectType,vector<float>> beacons = {
-    {WO_BEACON_BLUE_YELLOW, {2000,1000}},
-    {WO_BEACON_YELLOW_BLUE, {2000,1000}},
-    {WO_BEACON_BLUE_PINK, {1500,-1000}},
-    {WO_BEACON_PINK_BLUE, {1500,-1000}},
-    {WO_BEACON_PINK_YELLOW, {1000,1000}},
-    {WO_BEACON_YELLOW_PINK, {1000,1000}}
+    {WO_BEACON_BLUE_YELLOW, {2000, 1250}},
+    {WO_BEACON_YELLOW_BLUE, {2000, 1250}},
+    {WO_BEACON_BLUE_PINK,   {1500,-1250}},
+    {WO_BEACON_PINK_BLUE,   {1500,-1250}},
+    {WO_BEACON_PINK_YELLOW, {1000, 1250}},
+    {WO_BEACON_YELLOW_PINK, {1000, 1250}}
   };
   for(auto beacon : beacons) {
     auto& object = cache_.world_object->objects_[beacon.first];

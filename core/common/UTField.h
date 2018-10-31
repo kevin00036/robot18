@@ -64,12 +64,12 @@ const Point2D ownCrossLocation = Point2D(-PENALTY_CROSS_X, 0);
 const Point2D landmarkLocation[] = {
   Point2D(0, 0),  // center circle
 
-  Point2D(2000, 1000),       //  WO_BEACON_BLUE_YELLOW
-  Point2D(2000, 1000),      //  WO_BEACON_YELLOW_BLUE,
-  Point2D(1500, -1000),                  //  WO_BEACON_BLUE_PINK
-  Point2D(1500, -1000),                  //  WO_BEACON_PINK_BLUE
-  Point2D(1000, 1000),      //  WO_BEACON_PINK_YELLOWi
-  Point2D(1000, 1000),     //  WO_BEACON_YELLOW_PINK,
+  Point2D(2000,  1250),       //  WO_BEACON_BLUE_YELLOW
+  Point2D(2000,  1250),      //  WO_BEACON_YELLOW_BLUE,
+  Point2D(1500, -1250),                  //  WO_BEACON_BLUE_PINK
+  Point2D(1500, -1250),                  //  WO_BEACON_PINK_BLUE
+  Point2D(1000,  1250),      //  WO_BEACON_PINK_YELLOWi
+  Point2D(1000,  1250),     //  WO_BEACON_YELLOW_PINK,
 
   
   Point2D(0, 0),                 // WO_OWN_GOAL
