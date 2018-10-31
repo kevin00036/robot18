@@ -55,6 +55,13 @@ def reset_params():
     dP = 0
     dI = 0
     dD = 0
+
+def normAngle(x):
+    while x > math.pi:
+        x -= 2 * math.pi
+    while x <= -math.pi:
+        x += 2 * math.pi
+    return x
     
 def print_flag(stage_flag):
     if stage_flag == 0:
@@ -71,8 +78,10 @@ def print_flag(stage_flag):
         print('5 align')
     elif stage_flag == 6:
         print('6 kick', kick_frame)
-    else:
+    elif stage_flag == 9:
         print('9 finish!!!')
+    else:
+        print('Stage Flag Is OMiMAF', stage_flag)
 
 def clip(x, mx):
     if x >= mx:
@@ -83,13 +92,27 @@ def clip(x, mx):
 
 class Playing(Task):
     def run(self):
+        robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
+        ball = memory.world_objects.getObjPtr(core.WO_BALL)
+        goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
         global ptime, P, I, D, aP, aI, aD, dP, dI, dD, stage_flag, WDIS, kick_frame, finish_time, align_time
         print_flag(stage_flag)
     
         commands.setStiffness()
+
+
+        x = robot.loc.x
+        y = robot.loc.y
+        th = robot.orientation
+        goal.visionDistance = math.sqrt(x*x+y*y)
+        if not goal.seen:
+            goal.visionBearing = normAngle(math.atan2(-y, -x) - th)
+        goal.seen = True
+        print('Goal VDis', goal.visionDistance, 'VBear', goal.visionBearing)
+        print('  Ball VDis', ball.visionDistance, 'VBear', ball.visionBearing)
+
         # Find ball
         if stage_flag == 0:
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
             if not ball.seen:
                 commands.setWalkVelocity(0, 0, MAX_VEL)
             else:
@@ -98,7 +121,6 @@ class Playing(Task):
     
         # Walk ball
         if stage_flag == 1:
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
             dtime = self.getTime() - ptime
             ptime = self.getTime()
         
@@ -128,14 +150,13 @@ class Playing(Task):
             aC = -aP/2
             aC = clip(aC, MAX_VEL)
         
-            if not ball.seen:
-                stage_flag = 0
-            elif ball.visionDistance > WDIS:
+            # if not ball.seen:
+                # stage_flag = 0
+            if ball.visionDistance > WDIS:
                 commands.setWalkVelocity(C, 0, aC)
             else:
                 # commands.setWalkVelocity(0, 0, 0)
                 reset_params()
-                goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
                 if not goal.seen:
                     stage_flag = 2
                 else:
@@ -144,7 +165,6 @@ class Playing(Task):
     
         # Find goal
         if stage_flag == 2:
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
             dtime = self.getTime() - ptime
             ptime = self.getTime()
 
@@ -185,10 +205,9 @@ class Playing(Task):
             rat = m / min(m, MAX_VEL)
             C, dC = C * rat, dC * rat
 
-            goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
-            if not ball.seen:
-                stage_flag = 0
-            elif not goal.seen:
+            # if not ball.seen:
+                # stage_flag = 0
+            if not goal.seen:
                 commands.setWalkVelocity(C, dC, aC)
             else:
                 # commands.setWalkVelocity(0, 0, 0)
@@ -198,9 +217,6 @@ class Playing(Task):
     
         # Face goal
         if stage_flag == 3:
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
-            goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
-        
             dtime = self.getTime() - ptime
             ptime = self.getTime()
         
@@ -248,9 +264,9 @@ class Playing(Task):
             rat = m / min(m, MAX_VEL)
             C, dC = C * rat, dC * rat
                 
-            if not ball.seen:
-                stage_flag = 0
-            elif not goal.seen:
+            # if not ball.seen:
+                # stage_flag = 0
+            if not goal.seen:
                 stage_flag = 2
             elif abs(goal.visionBearing) > 0.15 or abs(ball.visionBearing) > 0.15:
                 commands.setWalkVelocity(C, dC, aC)
@@ -263,15 +279,12 @@ class Playing(Task):
     
         # Walk goal
         if stage_flag == 4:
-            goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
-        
             dtime = self.getTime() - ptime
             ptime = self.getTime()
 
         
             ##########################################
-            T = 1000
+            T = 1300
             V = goal.distance 
             T2 = WDIS / 2
             V2 = ball.visionDistance
@@ -312,11 +325,11 @@ class Playing(Task):
             ##########################################
             
             
-            if abs(goal.visionBearing) > 0.3 or abs(ball.visionBearing) > 0.3:
+            if abs(goal.visionBearing) > 0.4 or abs(ball.visionBearing) > 0.3:
                 # commands.setWalkVelocity(0, 0, 0)
                 reset_params()  
                 stage_flag = 1
-            elif goal.distance < 1100 and ball.visionDistance < WDIS and abs(goal.visionBearing) < 0.15 and abs(ball.visionBearing) < 0.15:
+            elif goal.distance < T + 100 and ball.visionDistance < WDIS and abs(goal.visionBearing) < 0.3 and abs(ball.visionBearing) < 0.15:
                 # commands.setWalkVelocity(0, 0, 0)
                 reset_params()
                 align_time = self.getTime()
@@ -326,8 +339,6 @@ class Playing(Task):
 
         # Align
         if stage_flag == 5:
-            ball = memory.world_objects.getObjPtr(core.WO_BALL)
-            goal = memory.world_objects.getObjPtr(core.WO_OWN_GOAL)
         
             dtime = self.getTime() - ptime
             ptime = self.getTime()
@@ -404,3 +415,12 @@ class Playing(Task):
             if self.getTime() - finish_time >= 7:
                 stage_flag = 0
                 # self.finish()
+
+        # head turn
+        T_H = 5
+        if int(self.getTime() / T_H) % 4 == 0:
+            tm = math.fmod(self.getTime() + T_H/4., T_H)
+            hpan = -1.8 + 3.6 * (min(tm, T_H-tm) / T_H * 2)
+            commands.setHeadPan(hpan, 0.1)
+            commands.setWalkVelocity(0, 0, 0)
+

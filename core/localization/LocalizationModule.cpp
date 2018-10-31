@@ -183,7 +183,7 @@ void LocalizationModule::processFrame() {
     last_ball_seen = clock();
 
     // Compute the relative position of the ball from vision readings
-    auto relBall = Point2D::getPointFromPolar(ball.visionDistance, ball.visionBearing);
+    auto relBall = Point2D::getPointFromPolar(ball.distance, ball.visionBearing);
     relBall = relBall.relativeToGlobal(self.loc, self.orientation);
     tlog(30, "RelBall: (%f, %f) VDis %.0f Dir %.0f", relBall.x, relBall.y, ball.visionDistance, ball.visionBearing * RAD_T_DEG);
 

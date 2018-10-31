@@ -421,7 +421,7 @@ void ImageProcessor::buildBlobs() {
         bc.index = blobIdx;
 
 
-        if(density >= 0.4 and aspect_ratio > 0.2 and aspect_ratio < 5) {
+        if(density >= 0.1 and aspect_ratio > 0.2 and aspect_ratio < 5) {
           for(int i=0; i<xcnt_usedxcnt; i++)
             xcnt_tmp[i] = xcnt[xcnt_usedx[i]];
           int pos = xcnt_usedxcnt / 2;
@@ -751,7 +751,7 @@ void ImageProcessor::buildBlobs() {
 
         double h0 = cmatrix_.cameraPosition_[2] - ball_rad;
         double straightDistance = ball_rad / sin(theta);
-        bc.groundDistance = sqrt(max(straightDistance * straightDistance - h0 * h0, 2500.));
+        bc.groundDistance = sqrt(max(straightDistance * straightDistance - h0 * h0, 0.));
 
         int xmin = 10000, xmax = -10000, ymin = 10000, ymax = -10000;
         for(int i=0; i<12; i++) {
@@ -824,8 +824,8 @@ void ImageProcessor::buildBlobs() {
       //Position p = cmatrix_.getWorldPosition(imageX, imageY, 50);
       ball->visionBearing = cmatrix_.bearing(p);
       ball->visionElevation = cmatrix_.elevation(p);
-      //ball->visionDistance = cmatrix_.groundDistance(p);
-      ball->visionDistance = bc.groundDistance;
+      ball->visionDistance = cmatrix_.groundDistance(p);
+      ball->distance = bc.groundDistance;
       ball->fromTopCamera = camera_ == Camera::TOP;
       ball->radius = bc.radius;
 
