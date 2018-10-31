@@ -42,17 +42,24 @@ target_x = 325
 target_y = 0
 
 headth = 0
-dth = 0.05
+dth = 0.10
+
+state = 0
+block_time = 0.
+block_start = False
+ps = None
+curact = ''
+
 class Playing(Task):
     def run(self):
+        global state, block_time, block_start, ps, curact
         global headth, dth
         headth = headth + dth
         if headth > 0.5 or headth < -0.5:
             dth = - dth
-        #commands.setHeadPan(headth, 0.1)
-            
 
-        global flag, remx, remy, counter, target_x, target_y
+        global target_x, target_y, headth, dth
+
         robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
         ball = memory.world_objects.getObjPtr(core.WO_BALL)
         # commands.setHeadPan(ball.visionBearing, 0.1)
@@ -61,71 +68,66 @@ class Playing(Task):
         x = robot.loc.x
         y = robot.loc.y
         th = robot.orientation
-        """
-        print(x, y, th)
-        if x < 650 and x > 0 and y < 700 and y > -700:
-            print("inside goal box")
-        else:
-            print("outside goal box")
-        """
-        mvx = 0
-        mvy = 0
 
         if ball.seen and not ( ball.center or ball.right or ball.left ):
-            target_x = 325
-            target_y = ball.loc.y / ball.loc.x * 325
+            target_x = 450
+            target_y = 2 * ball.loc.y / ball.loc.x * 450
+            target_y = clip(target_y, 650)
+        elif ball.seen and ( ball.center or ball.right or ball.left ):
+            target_x = 450
+            target_y = (ball.loc.y - ball.sd.y) / (ball.loc.x - ball.sd.x) * (450 - ball.sd.x) + ball.sd.y
+            target_y = clip(target_y, 650)
 
         vw = -normAngle(th)
         vw = clip(vw, 0.2)
         dx = target_x - robot.loc.x
         dy = target_y - robot.loc.y
-        vx = clip(dx * 0.005, 0.4)
-        vy = clip(dy * 0.005, 0.4)
+        vx = clip(dx * 0.01, 0.4)
+        vy = clip(dy * 0.01, 0.4)
 
         dis = math.sqrt(dx*dx+dy*dy)
-        if dis <= 100:
+        if dis <= 150:
             vx, vy = 0, 0
         if abs(th) <= 0.1:
             vw = 0
-        # if ball.spos - robot.loc.y > 0:
-            # vy = 0.3
-        # else:
-            # vy = -0.3
-        """
-        if robot.loc.x < 50 or robot.loc.x > 600 or robot.loc.y < -650 or robot.loc.y > 650:
-            vy = 0
-        """
+
+
         commands.setWalkVelocity(vx, vy, vw)
         print(dx, dy, th)
+ 
         """
-        elif ball.seen and ( ball.center or ball.right or ball.left ):
-            if ball.pos > 0:
-                ps = pose.ToPose(cfgpose.myblockright, 0.1)
-                ps.run()
+        if state == 0:
+            print('nothing')
+            if ball.seen and (ball.right or ball.left):
+                if ball.right: curact = 'right'
+                if ball.left: curact = 'left'
+                state = 1
+                block_time = self.getTime()
+                block_start = True
+                commands.setWalkVelocity(0, 0, 0)
             else:
-                ps = pose.ToPose(cfgpose.myblockleft, 0.1)
-                ps.run()
-        """
-        """
-        else:
-            mvy = 0
+                state = 0
+                commands.setWalkVelocity(vx, vy, vw)
+                print(dx, dy, th)
+        elif state == 1:
+            if curact == 'right':
+                print('right')
+                if block_start:
+                    ps = pose.ToPose(cfgpose.myblockright, 0.1)
+            elif curact == 'left':
+                print('left')
+                if block_start:
+                    ps = pose.ToPose(cfgpose.myblockleft, 0.1)
 
-            if x > 600:
-                mvx = 600 - x
-            if x < 50:
-                mvx = 50 - x
-        """
-        """
-        dis = math.sqrt(mvx*mvx+mvy*mvy)
-        vabs = min(0.3, dis)
+            ps.run()
+            block_start = False
+            if self.getTime() - block_time >= 1:
+                ps = pose.ToPose(cfgpose.mynoblock, 1)
+                state = 2
+                block_time = self.getTime()
+        elif state == 2:
+            ps.run()
 
-        if abs(dis) > 0.01:
-            vx = (+ (mvx) * math.cos(th) + (mvy) * math.sin(th)) / dis * vabs
-            vy = (- (mvx) * math.sin(th) + (mvy) * math.cos(th)) / dis * vabs
-        else:
-            vx = 0
-            vy = 0
-
-        #print(round(mvx,3), round(mvy,3))
-        #commands.setWalkVelocity(vx, vy, 0)
+            if self.getTime() - block_time >= 2:
+                state = 0
         """
