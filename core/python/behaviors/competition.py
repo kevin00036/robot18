@@ -38,6 +38,8 @@ def clip(x, mx):
         x = -mx
     return x
 
+target_x = 325
+target_y = 0
 
 headth = 0
 dth = 0.05
@@ -50,10 +52,11 @@ class Playing(Task):
         #commands.setHeadPan(headth, 0.1)
             
 
-        global flag, remx, remy, counter
+        global flag, remx, remy, counter, target_x, target_y
         robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
         ball = memory.world_objects.getObjPtr(core.WO_BALL)
-        commands.setHeadPan(ball.visionBearing, 0.1)
+        # commands.setHeadPan(ball.visionBearing, 0.1)
+        commands.setHeadPan(headth, 0.1)
 
         x = robot.loc.x
         y = robot.loc.y
@@ -69,18 +72,31 @@ class Playing(Task):
         mvy = 0
 
         if ball.seen and not ( ball.center or ball.right or ball.left ):
-            vw = -normAngle(th)
-            vw = clip(vw, 0.2)
-            if ball.spos - robot.loc.y > 0:
-                vy = 0.3
-            else:
-                vy = -0.3
-            """
-            if robot.loc.x < 50 or robot.loc.x > 600 or robot.loc.y < -650 or robot.loc.y > 650:
-                vy = 0
-            """
-            commands.setWalkVelocity(0, vy, vw)
-            print(vy, vw)
+            target_x = 325
+            target_y = ball.loc.y / ball.loc.x * 325
+
+        vw = -normAngle(th)
+        vw = clip(vw, 0.2)
+        dx = target_x - robot.loc.x
+        dy = target_y - robot.loc.y
+        vx = clip(dx * 0.005, 0.4)
+        vy = clip(dy * 0.005, 0.4)
+
+        dis = math.sqrt(dx*dx+dy*dy)
+        if dis <= 100:
+            vx, vy = 0, 0
+        if abs(th) <= 0.1:
+            vw = 0
+        # if ball.spos - robot.loc.y > 0:
+            # vy = 0.3
+        # else:
+            # vy = -0.3
+        """
+        if robot.loc.x < 50 or robot.loc.x > 600 or robot.loc.y < -650 or robot.loc.y > 650:
+            vy = 0
+        """
+        commands.setWalkVelocity(vx, vy, vw)
+        print(dx, dy, th)
         """
         elif ball.seen and ( ball.center or ball.right or ball.left ):
             if ball.pos > 0:
