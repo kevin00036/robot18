@@ -494,6 +494,42 @@ class Penalised(Task):
         if abs(th) <= 0.15:
             vw = 0
 
-        commands.setWalkVelocity(vx, vy, vw)
+        # commands.setWalkVelocity(vx, vy, vw)
         print(dx, dy, th)
  
+        ''
+
+        if state == 0:
+            print('nothing')
+            if ball.seen and (ball.right or ball.left):
+                if ball.right: curact = 'right'
+                if ball.left: curact = 'left'
+                state = 1
+                block_time = self.getTime()
+                block_start = True
+                commands.setWalkVelocity(0, 0, 0)
+            else:
+                state = 0
+                commands.setWalkVelocity(vx, vy, vw)
+                print(dx, dy, th)
+        elif state == 1:
+            if curact == 'right':
+                print('right')
+                if block_start:
+                    ps = pose.ToPose(cfgpose.myblockright, 0.5)
+            elif curact == 'left':
+                print('left')
+                if block_start:
+                    ps = pose.ToPose(cfgpose.myblockleft, 0.5)
+
+            ps.run()
+            block_start = False
+            if self.getTime() - block_time >= 1:
+                ps = pose.ToPose(cfgpose.mynoblock, 1)
+                state = 2
+                block_time = self.getTime()
+        elif state == 2:
+            ps.run()
+
+            if self.getTime() - block_time >= 2:
+                state = 0
