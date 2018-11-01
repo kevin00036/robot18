@@ -25,7 +25,7 @@ class Ready(Task):
             self.finish()
 
 WDIS = 200
-MAX_VEL = 0.3
+MAX_VEL = 0.4
 
 ptime = 0.0
 P = 0
@@ -431,29 +431,43 @@ target_x = 325
 target_y = 0
 
 headth = 0
-dth = 0.10
+dth = 0.03
 
 state = 0
 block_time = 0.
 block_start = False
 ps = None
 curact = ''
+track_th = 0.
 
+seenstate = False
 class Penalised(Task):
     def run(self):
         global state, block_time, block_start, ps, curact
-        global headth, dth
-        headth = headth + dth
-        if headth > 0.5 or headth < -0.5:
-            dth = - dth
-
-        global target_x, target_y, headth, dth
+        global target_x, target_y, headth, dth, track_th
 
         robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
         ball = memory.world_objects.getObjPtr(core.WO_BALL)
         # commands.setHeadPan(ball.visionBearing, 0.1)
-        commands.setHeadPan(headth, 0.1)
 
+        if ball.seen:
+            track_th = ball.visionBearing
+        else:
+            track_th *= 0.97
+
+        lb = max(track_th - 0.7, -1.8)
+        rb = min(track_th + 0.7, 1.8)
+
+        if headth > rb:
+            headth = rb
+        if headth < lb:
+            headth = lb
+        if headth >= rb or headth <= lb:
+            dth = - dth
+        headth = headth + dth
+        commands.setHeadPan(headth, 0.1)
+        # print(lb, rb, dth, headth)
+            
         x = robot.loc.x
         y = robot.loc.y
         th = robot.orientation
@@ -471,15 +485,14 @@ class Penalised(Task):
         vw = clip(vw, 0.2)
         dx = target_x - robot.loc.x
         dy = target_y - robot.loc.y
-        vx = clip(dx * 0.01, 0.4)
-        vy = clip(dy * 0.01, 0.4)
+        vx = clip(dx * 0.01, 0.3)
+        vy = clip(dy * 0.01, 0.3)
 
         dis = math.sqrt(dx*dx+dy*dy)
-        if dis <= 150:
+        if dis <= 50:
             vx, vy = 0, 0
-        if abs(th) <= 0.1:
+        if abs(th) <= 0.15:
             vw = 0
-
 
         commands.setWalkVelocity(vx, vy, vw)
         print(dx, dy, th)
