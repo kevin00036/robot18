@@ -91,7 +91,7 @@ class Playing(Task):
         if abs(th) <= 0.1:
             vw = 0
 
-
+        """
         commands.setWalkVelocity(vx, vy, vw)
         print(dx, dy, th)
  
@@ -113,11 +113,11 @@ class Playing(Task):
             if curact == 'right':
                 print('right')
                 if block_start:
-                    ps = pose.ToPose(cfgpose.myblockright, 0.1)
+                    ps = pose.ToPose(cfgpose.myblockright, 0.5)
             elif curact == 'left':
                 print('left')
                 if block_start:
-                    ps = pose.ToPose(cfgpose.myblockleft, 0.1)
+                    ps = pose.ToPose(cfgpose.myblockleft, 0.5)
 
             ps.run()
             block_start = False
@@ -130,4 +130,3 @@ class Playing(Task):
 
             if self.getTime() - block_time >= 2:
                 state = 0
-        """

@@ -17,7 +17,7 @@ from state_machine import Node, C, T, StateMachine
 
 class Ready(Task):
     def run(self):
-        commands.setStiffness()
+        commands.stand()
         if self.getTime() > 5.0:
             memory.speech.say("ready to play")
             self.finish()
@@ -39,16 +39,10 @@ class Playing(Task):
         if ball.seen or ball.bearing == 0:
             commands.setHeadPan(0,0.1) #ball.bearing, 0.1)
         if state == 0:
-            print('nothing')
-            if ball.seen and (ball.right or ball.left or ball.center):
-                if ball.right: curact = 'right'
-                if ball.left: curact = 'left'
-                if ball.center: curact = 'center'
-                state = 1
-                block_time = self.getTime()
-                block_start = True
-            else:
-                state = 0
+            curact = 'right'
+            state = 1
+            block_time = self.getTime()
+            block_start = True
         elif state == 1:
             if curact == 'center':
                 print('center')
@@ -57,22 +51,22 @@ class Playing(Task):
             elif curact == 'right':
                 print('right')
                 if block_start:
-                    ps = pose.ToPose(cfgpose.blockright, 0.1)
+                    ps = pose.ToPose(cfgpose.myblockright, 1.0)
             elif curact == 'left':
                 print('left')
                 if block_start:
-                    ps = pose.ToPose(cfgpose.blockleft, 0.1)
+                    ps = pose.ToPose(cfgpose.myblockleft, 0.5)
 
             ps.run()
             block_start = False
             if self.getTime() - block_time >= 1:
-                ps = pose.ToPose(cfgpose.mynoblock, 1)
+                commands.stand()
+                
+                #ps = pose.ToPose(cfgpose.mynoblock, 1)
                 state = 2
                 block_time = self.getTime()
         elif state == 2:
             ps.run()
 
             if self.getTime() - block_time >= 2:
-                state = 0
-
-
+                state = 3
