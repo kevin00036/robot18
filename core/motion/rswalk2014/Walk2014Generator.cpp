@@ -491,7 +491,7 @@ JointValues Walk2014Generator::makeJoints(ActionCommand::All* request,
   //    t>3*T tires to get out of "stuck" situations
   if (t > 3*T) { 
     std::cout << "phase expired, support foot changed, one foot in the air" << endl;
-    armStuck = true;
+    armStuck = false;
   }
   if ((t > 0.75*T && bodyModel.lastZMPL*bodyModel.ZMPL < 0.0) || t > 3*T) supportFoothasChanged = true;
   if (supportFoothasChanged) bodyModel.setIsLeftPhase(bodyModel.ZMPL < 0); // set isLeft phase in body model for kinematics etc
