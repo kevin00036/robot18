@@ -415,6 +415,7 @@ void ImageProcessor::buildBlobs() {
         bc.radius = (bc.width + bc.height) / 4;
         bc.valid = true;
         bc.clr = clr;
+        bc.confidence = blobSize;
         double aspect_ratio = bc.width / bc.height;
         bc.ar = aspect_ratio;
 
@@ -424,33 +425,13 @@ void ImageProcessor::buildBlobs() {
         if(density >= 0.1 and aspect_ratio > 0.2 and aspect_ratio < 5) {
           for(int i=0; i<xcnt_usedxcnt; i++)
             xcnt_tmp[i] = xcnt[xcnt_usedx[i]];
-          int pos = xcnt_usedxcnt / 2;
+          int pos = xcnt_usedxcnt * 0.75;
           nth_element(xcnt_tmp, xcnt_tmp + pos, xcnt_tmp + xcnt_usedxcnt);
           int midh = xcnt_tmp[pos] / 2;
 
-          //sort(pixels.begin(), pixels.end());
-          //vector<int> counter;
-          //int curx = -1, sumx = -1;
-          //for(int p=0;p<pixels.size();p++){
-            //int haox = pixels[p].first;
-            //int haoy = pixels[p].second;
-
-            //if(haox!=curx){
-              //if(sumx!=-1) counter.push_back(sumx);
-              //curx = haox;
-              //sumx = 1;
-            //}
-            //else
-              //sumx += 1;
-          //}
-          //sort(counter.begin(), counter.end());
-
-          //double midh = 0;
-          //if(!counter.empty())
-            //midh = counter.at(counter.size()/2)/2;
           bc.midh = midh;
           goalCandidates.push_back(bc);
-          //cout<<"GOAL GOOD "<<xcnt_usedxcnt<<" Diff Xs, Mid Height "<<zmidh<<" Orig "<<midh<<endl;
+          //cout<<"GOAL GOOD "<<xcnt_usedxcnt<<" Diff Xs, Mid Height "<<midh<<endl;
         }
       }
 
@@ -480,7 +461,8 @@ void ImageProcessor::buildBlobs() {
 
 
     void ImageProcessor::processGoalCandidates() {
-
+      int total_area = 0;
+      int totx = 0, toty = 0, toth = 0;
 
       for(auto bc: goalCandidates) {
         if(find(excludeBeacon.begin(), excludeBeacon.end(), bc.index) != excludeBeacon.end()) {
@@ -488,60 +470,67 @@ void ImageProcessor::buildBlobs() {
           continue;
         }
 
+        tlog(30, "GoalCand %d %d mich %d", bc.centerX, bc.centerY, bc.midh);
 
         double midh = bc.midh;
-        WorldObject* goal = &vblocks_.world_object->objects_[WO_OWN_GOAL];
-        goal->imageCenterX = bc.centerX;
-        goal->imageCenterY = bc.centerY;
-        gw = bc.width;
-        gh = bc.height;
-        Position p = cmatrix_.getWorldPosition(bc.centerX, bc.centerY, 255);
-        goal->visionBearing = cmatrix_.bearing(p);
-        goal->visionElevation = cmatrix_.elevation(p);
-        goal->visionDistance = cmatrix_.groundDistance(p);
-        goal->fromTopCamera = camera_ == Camera::TOP;
-        goal->seen = true;
 
-
-        int x1 = bc.centerX, y1 = bc.centerY-midh, x2 = bc.centerX, y2 = bc.centerY+midh;
-        Eigen::Vector3f v1, v2;
-        v1 << x1, y1, 1;
-        v2 << x2, y2, 1;
-        auto Kinv = cmatrix_.cameraCalibration_.inverse();
-        auto u1 = Kinv * v1, u2 = Kinv * v2;
-        auto c12 = (u1.dot(u2)) / (u1.norm() * u2.norm());
-        double theta = acos(c12);
-
-        double h0 = cmatrix_.cameraPosition_[2];
-        double dh1 = h0 - 510, dh2 = h0;
-
-        double lb = 0, rb = 10000;
-        for(int i=0; i<15; i++) {
-          double mb = (lb + rb) / 2;
-          double val = atan2(dh2, mb) - atan2(dh1, mb);
-          if(val < theta)
-            rb = mb;
-          else
-            lb = mb;
-        }
-
-        double dis = lb;
-        double disrat = dis / goal->visionDistance;
-        goal->distance = dis;
-        goal->visionDistance = dis;
-
-        if(dis>5000 or disrat < 0.3 or disrat > 3) goal->seen = false;
+        total_area += bc.confidence;
+        totx += bc.confidence * bc.centerX;
+        toty += bc.confidence * bc.centerY;
+        toth += bc.confidence * midh;
       }
 
-      /*
-         p = cmatrix_.getWorldPosition(centerX, centerY, 255);
-         goal->visionBearing = cmatrix_.bearing(p);
-         goal->visionElevation = cmatrix_.elevation(p);
-         goal->visionDistance = cmatrix_.groundDistance(p);
-         */
+      WorldObject* goal = &vblocks_.world_object->objects_[WO_OWN_GOAL];
+
+      if(total_area == 0) {
+        goal->seen = false;
+        return;
+      }
+
+      double cenx = (double) totx / total_area;
+      double ceny = (double) toty / total_area;
+      double midh = (double) toth / total_area;
+      goal->imageCenterX = cenx;
+      goal->imageCenterY = ceny;
+      Position p = cmatrix_.getWorldPosition(cenx, ceny, 255);
+      goal->visionBearing = cmatrix_.bearing(p);
+      goal->visionElevation = cmatrix_.elevation(p);
+      goal->visionDistance = cmatrix_.groundDistance(p);
+      goal->fromTopCamera = camera_ == Camera::TOP;
+      goal->seen = true;
 
 
+      int x1 = cenx, y1 = ceny-midh, x2 = cenx, y2 = ceny+midh;
+      Eigen::Vector3f v1, v2;
+      v1 << x1, y1, 1;
+      v2 << x2, y2, 1;
+      auto Kinv = cmatrix_.cameraCalibration_.inverse();
+      auto u1 = Kinv * v1, u2 = Kinv * v2;
+      auto c12 = (u1.dot(u2)) / (u1.norm() * u2.norm());
+      double theta = acos(c12);
 
+      double h0 = cmatrix_.cameraPosition_[2];
+      double dh1 = h0 - 510, dh2 = h0;
+
+      double lb = 0, rb = 10000;
+      for(int i=0; i<15; i++) {
+        double mb = (lb + rb) / 2;
+        double val = atan2(dh2, mb) - atan2(dh1, mb);
+        if(val < theta)
+          rb = mb;
+        else
+          lb = mb;
+      }
+
+      double dis = lb;
+      //double disrat = dis / goal->visionDistance;
+      goal->distance = dis;
+      //goal->visionDistance = dis;
+      gw = 300000 / dis;
+      gh = 133000 / dis;
+
+      if(dis > 5000) goal->seen = false;
+      //if(dis>5000 or disrat < 0.3 or disrat > 3) goal->seen = false;
     }
 
 
