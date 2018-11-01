@@ -106,12 +106,12 @@ class Playing(Task):
         x = robot.loc.x
         y = robot.loc.y
         th = robot.orientation
-        goal.visionDistance = math.sqrt(x*x+y*y)
         if not goal.seen:
+            goal.Distance = math.sqrt(x*x+y*y)
             goal.visionBearing = normAngle(math.atan2(-y, -x) - th)
-        goal.seen = True
-        print('Goal VDis', goal.visionDistance, 'VBear', goal.visionBearing)
+        print('Goal Dis', goal.distance, 'VBear', goal.visionBearing, 'Seen', goal.seen)
         print('  Ball VDis', ball.visionDistance, 'VBear', ball.visionBearing)
+        goal.seen = True
 
         # Find ball
         if stage_flag == 0:
@@ -286,7 +286,7 @@ class Playing(Task):
 
         
             ##########################################
-            T = 1300
+            T = 1500
             V = goal.distance 
             T2 = WDIS / 2
             V2 = ball.visionDistance
