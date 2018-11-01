@@ -515,6 +515,7 @@ class Penalised(Task):
         elif state == 0.5:
             if block_start:
                 ps = pose.ToPose(cfgpose.mynoblock, 0.2)
+            commands.setStiffness()
             ps.run()
             block_start = False
 
@@ -532,6 +533,7 @@ class Penalised(Task):
                 if block_start:
                     ps = pose.ToPose(cfgpose.myblockleft, 0.5)
 
+            commands.setStiffness()
             ps.run()
             block_start = False
             if self.getTime() - block_time >= 1:
@@ -539,6 +541,7 @@ class Penalised(Task):
                 state = 2
                 block_time = self.getTime()
         elif state == 2:
+            commands.setStiffness()
             ps.run()
 
             if self.getTime() - block_time >= 2:
