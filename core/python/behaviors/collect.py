@@ -15,20 +15,31 @@ from task import Task
 from state_machine import Node, C, T, StateMachine
 
 
-
-
-import sys
-import tty, termios
+import sys, tty, termios
+from select import select
 
 def getch():
-	fd = sys.stdin.fileno()
-	old_settings = termios.tcgetattr(fd)
-	try:
-		tty.setraw(fd)
-		ch = sys.stdin.read(1)
-	finally:
-		termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-	return ch
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+
+        try:
+            tty.setraw(sys.stdin.fileno())
+            [i, o, e] = select([sys.stdin.fileno()], [], [], 0.1)
+            if i:
+                ch = sys.stdin.read(1)
+            else:
+                ch = None
+
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+        return ch
+
+
+
+
+
+
 
 
 
@@ -40,20 +51,76 @@ class Ready(Task):
             memory.speech.say("ready to play")
             self.finish()
 
-
+prevtime = 0
+f = open('note.txt','a')
 class Playing(Task):
     def run(self):
+	global prevtime, f
+
 	key = getch()
+	if key == None:
+		key = 'n'
+
         time = self.getTime()
+	interval = time - prevtime
+	prevtime = time
 
-        print(time)
 
-	if key == 'w':
-                commands.setWalkVelocity(1, 0, 0)
+	maxv = 0.3
+	maxth = 0.3
+
+	if key == 'n':
+		vx, vy, vth = 0, 0, 0
+	elif key == 'w':
+		vx, vy, vth = maxv, 0, 0
 	elif key == 's':
-                commands.setWalkVelocity(0, 0, 0)
+		vx, vy, vth = -maxv, 0, 0
+	elif key == 'd':
+		vx, vy, vth = 0, -maxv, 0
+	elif key == 'a':
+		vx, vy, vth = 0, maxv, 0
+	elif key == 'e':
+		vx, vy, vth = 0, 0, -maxth
+	elif key == 'q':
+		vx, vy, vth = 0, 0, maxth
+	else:
+		vx, vy, vth = 0, 0, 0
 
 
-        
-        ball = memory.world_objects.getObjPtr(core.WO_BALL)
-        print(ball.visionDistance)
+
+        commands.setWalkVelocity(vx, vy, vth)
+
+
+	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth),file = f)
+	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth))
+	objids = [
+core.WO_BEACON_BALL,
+core.WO_AAAAAAAAA,
+]
+        objs = [memory.world_objects.getObjPtr(oid) for oid in objids]
+        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_YELLOW),
+        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_BLUE),
+        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_PINK),
+        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_BLUE),
+        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_YELLOW),
+        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_PINK)}
+
+	
+	if ball.seen:
+		print(str(ball.visionDistance)+','+str(ball.visionBearing), file = f)	
+		print(str(ball.visionDistance)+','+str(ball.visionBearing))	
+	else:
+		print('0, 0', file = f)
+		print('0, 0')
+
+
+"""
+class Finished(Task):
+    def run(self):
+        global f
+        print('end',file = f)
+        commands.setStiffness(cfgstiff.Zero)
+        if self.getTime() > 2.0:
+            memory.speech.say("turned off stiffness")
+            self.finish()
+"""
