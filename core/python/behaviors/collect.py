@@ -51,7 +51,6 @@ class Ready(Task):
             memory.speech.say("ready to play")
             self.finish()
 
-prevtime = 0
 f = open('note.txt','a')
 class Playing(Task):
     def run(self):
@@ -62,9 +61,6 @@ class Playing(Task):
 		key = 'n'
 
         time = self.getTime()
-	interval = time - prevtime
-	prevtime = time
-
 
 	maxv = 0.3
 	maxth = 0.3
@@ -91,28 +87,31 @@ class Playing(Task):
         commands.setWalkVelocity(vx, vy, vth)
 
 
-	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth),file = f)
-	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth))
-	objids = [
-core.WO_BEACON_BALL,
-core.WO_AAAAAAAAA,
-]
+	info = str(round(time,3))+','+str(vx)+','+str(vy)+','+str(vth)
+	objids = [core.WO_BALL,
+            core.WO_BEACON_BLUE_YELLOW,
+            core.WO_BEACON_YELLOW_BLUE,
+            core.WO_BEACON_BLUE_PINK,
+            core.WO_BEACON_PINK_BLUE,
+            core.WO_BEACON_PINK_YELLOW,
+            core.WO_BEACON_YELLOW_PINK]
         objs = [memory.world_objects.getObjPtr(oid) for oid in objids]
-        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_YELLOW),
-        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_BLUE),
-        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_PINK),
-        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_BLUE),
-        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_YELLOW),
-        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_PINK)}
 
-	
-	if ball.seen:
-		print(str(ball.visionDistance)+','+str(ball.visionBearing), file = f)	
+	data = ''
+        for obj in objs:
+	    if obj.seen:
+                data = data + ','+str(round(obj.visionDistance,3))+','+str(round(obj.visionBearing,3))	
+	    else:
+                data = data + ',-1,-1'
+
+        print(info+data)
+        print(info+data, file = f)
+        """
+	        print(str(ball.visionDistance)+','+str(ball.visionBearing), file = f)	
 		print(str(ball.visionDistance)+','+str(ball.visionBearing))	
-	else:
-		print('0, 0', file = f)
+		print('-1, -1', file = f)
 		print('0, 0')
-
+        """
 
 """
 class Finished(Task):
