@@ -27,5 +27,8 @@ for i in range(T):
     dt = sim.step(*act)
     data.append((dt, obj, act))
 
+data = [data[i] + (data[i+1][1],) for i in range(len(data)-1)]
+
 print(data[:10])
+
 
