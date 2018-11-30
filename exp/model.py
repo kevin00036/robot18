@@ -22,7 +22,7 @@ def actgen():
 
 ag = actgen()
 for i in range(T):
-    obj = sim.get_obs()
+    _, obj = sim.get_obs()
     act = next(ag)
     dt = sim.step(*act)
     data.append((dt, obj, act))
