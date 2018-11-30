@@ -20,7 +20,7 @@ class Simulator:
     def reset(self):
         self.objects = [
             Point(2000, 1250),
-            Point(-1000, 0),
+            # Point(-1000, 0),
         ]
 
         self.pos = Point(0, 0)
@@ -41,7 +41,7 @@ class Simulator:
                 dis = -1
                 bear = -1
             obs.extend([dis, bear])
-        return np.array(obs)
+        return self.cur_time, np.array(obs)
 
     def step(self, ax, ay, alpha):
         ax = clip(ax, -1., 1.) * 1000
@@ -56,11 +56,14 @@ class Simulator:
 
         self.pos += self.vel * dt
         self.orien = reg_angle(self.orien + self.angvel * dt) 
+
+        self.cur_time += dt
+        return dt
         
 
 if __name__ == '__main__':
     sim = Simulator()
-    for i in range(10):
+    for i in range(20):
         print(sim.pos, sim.orien)
         print(sim.get_obs())
         sim.step(0.1, 0.1, 0.1)
