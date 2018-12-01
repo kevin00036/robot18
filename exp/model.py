@@ -1,38 +1,12 @@
-from sim import Simulator
 import torch
 import torch.nn.functional as F
 import torch.utils.data
 import numpy as np
 import random
+from data import SimData, RealData
 
-sim = Simulator()
-
-random.seed(34021501)
-
-data = []
-T = 10000
-
-def actgen():
-    while True:
-        repeat = random.randrange(10)
-        for i in range(repeat):
-            act = random.choice([
-                (0., 0., 0.),
-                (0.5, 0., 0.),
-                (-0.5, 0., 0.),
-                (0., 0.5, 0.),
-                (0., -0.5, 0.),
-                (0., 0., 0.2),
-                (0., 0., -0.2),
-            ])
-            yield act
-
-ag = actgen()
-for i in range(T):
-    _, obj = sim.get_obs()
-    act = next(ag)
-    dt = sim.step(*act)
-    data.append((dt, obj, act))
+# data = SimData(10000)
+data = RealData()
 
 K = 5
 data = [(
