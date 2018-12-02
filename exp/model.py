@@ -5,8 +5,8 @@ import numpy as np
 import random
 from data import SimData, RealData
 
-# data = SimData(10000)
-data = RealData()
+data = SimData(10000)
+# data = RealData()
 
 K = 5
 data = [(
@@ -92,7 +92,7 @@ for epoch in range(200):
         train_losses.append(float(loss))
 
     with torch.no_grad():
-        for i, (dt, obs, act, obs_next) in enumerate(train_loader):
+        for i, (dt, obs, act, obs_next) in enumerate(val_loader):
             # print(dt, obs, act, obs_next)
             # Forward pass: Compute predicted y by passing x to the model
 

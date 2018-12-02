@@ -37,7 +37,7 @@ def RealData(path='data/note1.txt'):
     f = [list(map(float,d.split(','))) for d in f]
     data = [(
         max(0., f[i+1][0] - f[i][0]),
-        np.array(f[i][4:6]),
+        np.array(f[i][6:8]),
         np.array(f[i][1:4]),
     ) for i in range(len(f)-1)]
     return data
