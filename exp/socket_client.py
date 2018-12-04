@@ -4,6 +4,7 @@ import pickle
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(('localhost', 34021))
+# s.connect(('dum-dums.cs.utexas.edu', 34021))
 for i in range(3):
     obj = [
         0.2,
