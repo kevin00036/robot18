@@ -10,17 +10,17 @@ def SimData(T):
 
     def actgen():
         while True:
-            repeat = random.randrange(10)
+            repeat = random.randrange(5, 15)
+            act = random.choice([
+                (0., 0., 0.),
+                (0.5, 0., 0.),
+                (-0.5, 0., 0.),
+                (0., 0.5, 0.),
+                (0., -0.5, 0.),
+                (0., 0., 0.5),
+                (0., 0., -0.5),
+            ])
             for i in range(repeat):
-                act = random.choice([
-                    (0., 0., 0.),
-                    (0.5, 0., 0.),
-                    (-0.5, 0., 0.),
-                    (0., 0.5, 0.),
-                    (0., -0.5, 0.),
-                    (0., 0., 0.2),
-                    (0., 0., -0.2),
-                ])
                 yield act
 
     ag = actgen()
