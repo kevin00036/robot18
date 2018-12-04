@@ -17,9 +17,9 @@ print(cnt, '/', len(data))
 K = 1
 data = [(
     data[i][0], 
-    # np.concatenate([data[i][1], data[i][1] - data[i-K][1]]), 
+    np.concatenate([data[i][1], data[i][1] - data[i-K][1]]), 
     # data[i][1] + data[i-K][1], 
-    data[i][1], 
+    # data[i][1], 
     data[i][2], 
     data[i+1][1] - data[i][1],
 ) for i in range(K, len(data)-1)]
@@ -30,9 +30,10 @@ for i in range(20): print(data[i])
 class LinearNet(torch.nn.Module):
     def __init__(self, D_in, D_out):
         super().__init__()
-        self.linear = torch.nn.Linear(D_in, 10)
-        self.linear2 = torch.nn.Linear(10, 10)
-        self.linear3 = torch.nn.Linear(10, D_out)
+        hidden_dim = 30
+        self.linear = torch.nn.Linear(D_in, hidden_dim)
+        self.linear2 = torch.nn.Linear(hidden_dim, hidden_dim)
+        self.linear3 = torch.nn.Linear(hidden_dim, D_out)
 
     def forward(self, x):
         x = self.linear(x)
