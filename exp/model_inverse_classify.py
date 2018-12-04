@@ -166,15 +166,16 @@ def test_initialize():
 
 def test_query(obs1, obs2):
     global test_model, test_norm
-    obs1 = torch.from_numpy(obs1).unsqueeze(0)
-    obs2 = torch.from_numpy(obs2).unsqueeze(0)
-    obsd = obs2 - obs1
-    obs1 = (obs1 - test_norm[0]) / test_norm[1]
-    obsd = (obsd - test_norm[2]) / test_norm[3]
-    
-    pred_prob = test_model(obs1, obsd)
-    _, pred = pred_prob.max(1)
-    pred = int(pred[0].numpy())
+    with torch.no_grad():
+        obs1 = torch.from_numpy(obs1).unsqueeze(0)
+        obs2 = torch.from_numpy(obs2).unsqueeze(0)
+        obsd = obs2 - obs1
+        obs1 = (obs1 - test_norm[0]) / test_norm[1]
+        obsd = (obsd - test_norm[2]) / test_norm[3]
+        
+        pred_prob = test_model(obs1, obsd)
+        _, pred = pred_prob.max(1)
+        pred = int(pred[0].numpy())
     return pred
 
 if __name__ == '__main__':

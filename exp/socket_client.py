@@ -8,8 +8,8 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect(('localhost', 34021))
 # s.connect(('dum-dums.cs.utexas.edu', 34021))
 
-# mode = 'sim'
-mode = 'real'
+mode = 'sim'
+# mode = 'real'
 
 # if mode == 'real':
     # f = open('data/note1.txt')
@@ -35,7 +35,8 @@ for d in data:
     print(arr)
     bstr = pickle.dumps(arr)
     s.sendall(bstr)
-    time.sleep(0.1)
+    time.sleep(0.2)
+    # time.sleep(1)
 
 
 

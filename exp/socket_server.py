@@ -3,6 +3,8 @@ import pickle
 import time
 import numpy as np
 from model_inverse_classify import test_initialize, test_query
+# from plotting.plot_result import plot_initialize, plot_update, plot_get_act_float, plot_get_act_int
+import subprocess
 
 def socket_datagen():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,6 +30,11 @@ def socket_datagen():
 
 def main():
     test_initialize()
+    # plot_initialize()
+    proc = subprocess.Popen(['python3', 'plotting/plot_result.py'],
+                            stdin=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,)
+
     last_obs = np.zeros(14, dtype=np.float32)
 
     datagen = socket_datagen()
@@ -42,6 +49,13 @@ def main():
 
         pred_prev_act = test_query(last_obs, obs)
         print('Predicted Action :', pred_prev_act)
+
+        # plot_act = plot_get_act_int(pred_prev_act)
+        # plot_update(plot_act, obs)
+        print('Send')
+        inp_str = ','.join(map(str, [pred_prev_act] + list(obs)))
+        proc.stdin.write((inp_str + '\n').encode())
+        proc.stdin.flush()
 
         last_obs = obs
 
