@@ -2,7 +2,7 @@ import socket
 import pickle
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('localhost', 34021))
+s.bind(('0.0.0.0', 34021))
 s.listen(1)
 while True:
     try:
