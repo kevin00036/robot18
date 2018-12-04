@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 def Point(x, y):
     return np.array([x, y], dtype=float)
@@ -18,9 +19,16 @@ class Simulator:
         self.reset()
 
     def reset(self):
+        ball_x = random.randrange(-1250, 1250)
+        ball_y = random.randrange(-750, 750)
         self.objects = [
-            Point(2000, 1250),
-            # Point(-1000, 0),
+            Point(ball_x, ball_y),
+            Point(1500, 1000),
+            Point(1500, -1000),
+            Point(0, 1000),
+            Point(0, -1000),
+            Point(-1500, 1000),
+            Point(-1500, -1000),
         ]
 
         self.pos = Point(0, 0)
@@ -39,9 +47,9 @@ class Simulator:
             dpos = obj - self.pos
             dis = np.linalg.norm(dpos)
             bear = reg_angle(np.arctan2(dpos[1], dpos[0]) - self.orien)
-            # if abs(bear) > self.fov:
-                # dis = -1
-                # bear = -1
+            if abs(bear) > self.fov:
+                dis = -1
+                bear = -1
             obs.extend([dis, bear])
         return self.cur_time, np.array(obs)
 

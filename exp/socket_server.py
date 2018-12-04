@@ -2,6 +2,7 @@ import socket
 import pickle
 import time
 import numpy as np
+from model_inverse_classify import test_initialize, test_query
 
 def socket_datagen():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,6 +27,7 @@ def socket_datagen():
     conn.close()
 
 def main():
+    test_initialize()
     last_obs = np.zeros(14, dtype=np.float32)
 
     datagen = socket_datagen()
@@ -36,9 +38,10 @@ def main():
         act = np.array(data[1:4], dtype=np.float32)
         obs = np.array(data[4:], dtype=np.float32)
 
-        print(tm, act, obs)
+        print(act)
 
-        pred_prev_act = 0
+        pred_prev_act = test_query(last_obs, obs)
+        print('Predicted Action :', pred_prev_act)
 
         last_obs = obs
 
