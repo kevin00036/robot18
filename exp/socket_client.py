@@ -35,7 +35,7 @@ for d in data:
     print(arr)
     bstr = pickle.dumps(arr)
     s.sendall(bstr)
-    time.sleep(0.2)
+    time.sleep(0.1)
     # time.sleep(1)
 
 

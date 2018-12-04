@@ -19,16 +19,17 @@ def input_with_timeout(prompt, timeout):
 
 matplotlib.use('Qt4agg')
 
-canvas_size = 250
+canvas_size = 500
 action = {}
 ox, oy = 0, 0
 prev_point = []
+fig, ax = None, None
 
 def to_y(y):
     return canvas_size-y
 
 def to_bear(b):
-    return math.pi/2-b
+    return math.pi/2+b
     
 def plot_get_act_float(act):
     if np.array_equal(act, [0, 0, 0]): return 'n'
@@ -55,9 +56,12 @@ def get_obj(obj):
     #[(100, 0.1, 'g'), (500, -0.1, 'b'), (1000, -0.6, 'y')]
 
 def plot_initialize():
-    global action, ox, oy, canvas_size
+    global action, ox, oy, canvas_size, fig, ax
     
-    plt.figure(figsize=[7,7])
+    plt.ion()
+    fig, ax = plt.subplots(1, 1, figsize=[7, 7])
+    ax.set_autoscale_on(False)
+    # plt.figure(figsize=[7,7])
 
     prefix = 'plotting/'
 
@@ -82,15 +86,16 @@ def plot_initialize():
 
     ox, oy = canvas_size/2, canvas_size - 510/700*canvas_size
     point = plt.scatter(ox,to_y(oy))
+
+    plt.show(False)
+    plt.draw()
     
 def plot_update(act, obj):
-    global prev_point, canvas_size
+    global prev_point, canvas_size, fig, ax
 
-    for pt in prev_point:
-        pt.remove() 
-            
-    plt.imshow(action[act])
-    point = []
+    ax.clear()
+
+    ax.imshow(action[act])
     ss = get_obj(obj)
     for pt in ss:
         distance = pt[0]
@@ -102,10 +107,10 @@ def plot_update(act, obj):
         dy = distance*math.sin(bearing) * ratio
         px = max(0, min(ox + dx, canvas_size))
         py = max(0, min(to_y(oy + dy), canvas_size))
-        point.append(plt.scatter(px, py+60*ratio, s = 120, c = color[0], edgecolors = 'k', marker = 's'))
-        point.append(plt.scatter(px, py-60*ratio, s = 120, c = color[1], edgecolors = 'k', marker = 's'))
+        ax.scatter(px, py+60*ratio, s = 120, c = color[0], edgecolors = 'k', marker = 's')
+        ax.scatter(px, py-60*ratio, s = 120, c = color[1], edgecolors = 'k', marker = 's')
     
-    prev_point = point
+    ax.axis([0, canvas_size, canvas_size*0.8, 0])
     # plt.pause(0.01)
 
 
@@ -127,14 +132,22 @@ def test_main():
     plt.pause(3)
 
 def main():
+    global fig, ax
     plot_initialize()
     while True:
-        timeout = 1
-        try:
-            inp = input_with_timeout('', timeout)
-        except TimeoutExpired:
-            print('Sorry, times up')
-            plt.pause(0.001)
+        inp = None
+
+        timeout = 0.001
+        while True:
+            try:
+                inp = input_with_timeout('', timeout)
+            except TimeoutExpired:
+                # print('Sorry, times up')
+                # plt.pause(0.001)
+                break
+        
+        if inp is None:
+            fig.canvas.start_event_loop(0.001)
             continue
 
         # inp = input()
@@ -144,7 +157,8 @@ def main():
         print(act, inp)
         pact = plot_get_act_int(act)
         plot_update(pact, inp)
-        plt.pause(0.001)
+        # plt.pause(0.001)
+        fig.canvas.start_event_loop(0.001)
     
 if __name__ == '__main__':
     main()
