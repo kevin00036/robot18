@@ -38,5 +38,9 @@ def main():
 
         print(tm, act, obs)
 
+        pred_prev_act = 0
+
+        last_obs = obs
+
 if __name__ == '__main__':
     main()
