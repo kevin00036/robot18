@@ -14,34 +14,35 @@ import math
 from task import Task
 from state_machine import Node, C, T, StateMachine
 
+import socket
+import pickle
+
 
 import sys, tty, termios
 from select import select
 
+print('Start Connect Socket')
+py_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# py_socket.connect(('dum-dums.cs.utexas.edu', 34021))
+py_socket.connect(('128.83.252.110', 34021))
+print('Socket Connected')
+
 def getch():
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
 
-        try:
-            tty.setraw(sys.stdin.fileno())
-            [i, o, e] = select([sys.stdin.fileno()], [], [], 0.1)
-            if i:
-                ch = sys.stdin.read(1)
-            else:
-                ch = None
+    try:
+        tty.setraw(sys.stdin.fileno())
+        [i, o, e] = select([sys.stdin.fileno()], [], [], 0.1)
+        if i:
+            ch = sys.stdin.read(1)
+        else:
+            ch = None
 
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-        return ch
-
-
-
-
-
-
-
-
+    return ch
 
 
 class Ready(Task):
@@ -51,76 +52,73 @@ class Ready(Task):
             memory.speech.say("ready to play")
             self.finish()
 
-prevtime = 0
 f = open('note.txt','a')
 class Playing(Task):
     def run(self):
-	global prevtime, f
+        global prevtime, f
 
-	key = getch()
-	if key == None:
-		key = 'n'
+        key = getch()
+        if key == None:
+            key = 'n'
 
         time = self.getTime()
-	interval = time - prevtime
-	prevtime = time
 
+        maxv = 0.3
+        maxth = 0.3
 
-	maxv = 0.3
-	maxth = 0.3
-
-	if key == 'n':
-		vx, vy, vth = 0, 0, 0
-	elif key == 'w':
-		vx, vy, vth = maxv, 0, 0
-	elif key == 's':
-		vx, vy, vth = -maxv, 0, 0
-	elif key == 'd':
-		vx, vy, vth = 0, -maxv, 0
-	elif key == 'a':
-		vx, vy, vth = 0, maxv, 0
-	elif key == 'e':
-		vx, vy, vth = 0, 0, -maxth
-	elif key == 'q':
-		vx, vy, vth = 0, 0, maxth
-	else:
-		vx, vy, vth = 0, 0, 0
-
-
+        if key == 'n':
+            vx, vy, vth = 0, 0, 0
+        elif key == 'w':
+            vx, vy, vth = maxv, 0, 0
+        elif key == 's':
+            vx, vy, vth = -maxv, 0, 0
+        elif key == 'd':
+            vx, vy, vth = 0, -maxv, 0
+        elif key == 'a':
+            vx, vy, vth = 0, maxv, 0
+        elif key == 'e':
+            vx, vy, vth = 0, 0, -maxth
+        elif key == 'q':
+            vx, vy, vth = 0, 0, maxth
+        else:
+            vx, vy, vth = 0, 0, 0
 
         commands.setWalkVelocity(vx, vy, vth)
 
-
-	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth),file = f)
-	print(str(round(interval,3))+','+str(vx)+','+str(vy)+','+str(vth))
-	objids = [
-core.WO_BEACON_BALL,
-core.WO_AAAAAAAAA,
-]
+        info = str(round(time,3))+','+str(vx)+','+str(vy)+','+str(vth)
+        objids = [core.WO_BALL,
+                  core.WO_BEACON_BLUE_YELLOW,
+                  core.WO_BEACON_YELLOW_BLUE,
+                  core.WO_BEACON_BLUE_PINK,
+                  core.WO_BEACON_PINK_BLUE,
+                  core.WO_BEACON_PINK_YELLOW,
+                  core.WO_BEACON_YELLOW_PINK]
         objs = [memory.world_objects.getObjPtr(oid) for oid in objids]
-        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_YELLOW),
-        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_BLUE),
-        memory.world_objects.getObjPtr(core.WO_BEACON_BLUE_PINK),
-        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_BLUE),
-        memory.world_objects.getObjPtr(core.WO_BEACON_PINK_YELLOW),
-        memory.world_objects.getObjPtr(core.WO_BEACON_YELLOW_PINK)}
 
-	
-	if ball.seen:
-		print(str(ball.visionDistance)+','+str(ball.visionBearing), file = f)	
-		print(str(ball.visionDistance)+','+str(ball.visionBearing))	
-	else:
-		print('0, 0', file = f)
-		print('0, 0')
+        data = ''
+        for obj in objs:
+            if obj.seen:
+                data = data + ','+str(round(obj.visionDistance,3))+','+str(round(obj.visionBearing,3))
+            else:
+                data = data + ',-1,-1'
+
+        print(info+data)
+        # print(info+data, file = f)
 
 
-"""
-class Finished(Task):
-    def run(self):
-        global f
-        print('end',file = f)
-        commands.setStiffness(cfgstiff.Zero)
-        if self.getTime() > 2.0:
-            memory.speech.say("turned off stiffness")
-            self.finish()
-"""
+        # Send socket
+        objarr = [
+            time,
+            vx, vy, vth,
+        ]
+        for obj in objs:
+            if obj.seen:
+                objarr.extend([obj.visionDistance, obj.visionBearing])
+            else:
+                objarr.extend([-1., -1.])
+        objarr = [float(x) for x in objarr]
+        print(objarr)
+        
+        bstr = pickle.dumps(objarr)
+
+        py_socket.sendall(bstr)
