@@ -35,8 +35,8 @@ class LinearNet(torch.nn.Module):
         return pred
 
 def train():
-    # source = 'sim'
-    source = 'real'
+    source = 'sim'
+    # source = 'real'
     data_size = 10000
     all_obj = True
     # all_obj = False

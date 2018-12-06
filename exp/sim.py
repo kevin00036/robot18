@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import math
 
 def Point(x, y):
     return np.array([x, y], dtype=float)
@@ -54,9 +55,14 @@ class Simulator:
         return self.cur_time, np.array(obs)
 
     def step(self, actx, acty, actalpha):
-        tar_vx = actx * 300.
-        tar_vy = acty * 300.
+        rel_vx = actx * 300.
+        rel_vy = acty * 300.
         tar_angvel = actalpha
+
+        cs = math.cos(self.orien)
+        sn = math.sin(self.orien)
+        tar_vx = cs * rel_vx - sn * rel_vy
+        tar_vy = sn * rel_vx + cs * rel_vy
         
         dvx = tar_vx - self.vel[0]
         dvy = tar_vy - self.vel[1]
