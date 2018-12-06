@@ -17,8 +17,6 @@ def input_with_timeout(prompt, timeout):
         return sys.stdin.readline().rstrip('\n') # expect stdin to be line-buffered
     raise TimeoutExpired
 
-matplotlib.use('Qt4agg')
-
 canvas_size = 500
 action = {}
 ox, oy = 0, 0
@@ -110,7 +108,7 @@ def plot_update(act, obj):
         ax.scatter(px, py+60*ratio, s = 120, c = color[0], edgecolors = 'k', marker = 's')
         ax.scatter(px, py-60*ratio, s = 120, c = color[1], edgecolors = 'k', marker = 's')
     
-    ax.axis([0, canvas_size, canvas_size*0.8, 0])
+    ax.axis([0, canvas_size, canvas_size, 0])
     # plt.pause(0.01)
 
 

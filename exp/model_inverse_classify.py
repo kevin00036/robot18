@@ -35,8 +35,8 @@ class LinearNet(torch.nn.Module):
         return pred
 
 def train():
-    source = 'sim'
-    # source = 'real'
+    # source = 'sim'
+    source = 'real'
     data_size = 10000
     all_obj = True
     # all_obj = False
@@ -66,7 +66,7 @@ def train():
             if np.array_equal(act, [0, 0, 0.3]): return 5
             if np.array_equal(act, [0, 0, -0.3]): return 6
             
-        data = RealData(all_obj=all_obj)
+        data = RealData(all_obj=all_obj, path='data/note2.txt')
 
 
     K = 1
@@ -96,7 +96,7 @@ def train():
     # optimizer = torch.optim.SGD(model.parameters(), lr = 1e-2)
     optimizer = torch.optim.Adam(model.parameters(), lr = 1e-2)
 
-    batch_size = 32
+    batch_size = 64
     data = [torch.from_numpy(np.array(x)).float() for x in zip(*data)]
     mean_, std_ = data[1].mean(dim=0), data[1].std(dim=0)
     mean3_, std3_ = data[3].mean(dim=0), data[3].std(dim=0)
@@ -179,9 +179,9 @@ def test_query(obs1, obs2):
     return pred
 
 if __name__ == '__main__':
-    # train()
-    test_initialize()
-    obs1 = np.zeros(14, dtype=np.float32)
-    obs2 = np.ones(14, dtype=np.float32)
-    res = test_query(obs1, obs2)
-    print(res)
+    train()
+    # test_initialize()
+    # obs1 = np.zeros(14, dtype=np.float32)
+    # obs2 = np.ones(14, dtype=np.float32)
+    # res = test_query(obs1, obs2)
+    # print(res)

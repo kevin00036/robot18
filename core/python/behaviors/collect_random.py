@@ -13,6 +13,7 @@ import lights
 import math
 from task import Task
 from state_machine import Node, C, T, StateMachine
+import random
 
 import socket
 import pickle
@@ -21,13 +22,21 @@ import pickle
 import sys, tty, termios
 from select import select
 
+
+"""
 print('Start Connect Socket')
 py_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # py_socket.connect(('dum-dums.cs.utexas.edu', 34021))
-py_socket.connect(('128.83.252.101', 34021))
+py_socket.connect(('128.83.252.110', 34021))
 print('Socket Connected')
+"""
 
+
+act = ['q','w','e','a','s','d','n']
+cur_ch = ''
+counter = 10
 def getch():
+    global act, counter, cur_ch 
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
 
@@ -41,8 +50,14 @@ def getch():
 
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        
+    r = random.randint(0, 6)
+    if counter is 10:
+        counter = 0
+        cur_ch = act[r]
+    counter += 1
 
-    return ch
+    return cur_ch
 
 
 class Ready(Task):
@@ -52,20 +67,18 @@ class Ready(Task):
             memory.speech.say("ready to play")
             self.finish()
 
-f = open('note.txt','a')
+f = open('note_random.txt','a')
 class Playing(Task):
     def run(self):
         global prevtime, f
 
-        commands.setHeadPan(0.0, 0.5)
-        commands.setHeadTilt(-10.0)
         key = getch()
         if key == None:
             key = 'n'
 
         time = self.getTime()
 
-        maxv = 0.7
+        maxv = 0.3
         maxth = 0.3
 
         if key == 'n':
@@ -104,11 +117,13 @@ class Playing(Task):
             else:
                 data = data + ',-1,-1'
 
-        print(info+data)
-        # print(info+data, file = f)
+        robot = memory.world_objects.getObjPtr(memory.robot_state.WO_SELF)
+        if not robot.flying:
+            print(info+data)
+            print(info+data, file = f)
 
-
-        # Send socket
+        """
+       # Send socket
         objarr = [
             time,
             vx, vy, vth,
@@ -124,3 +139,4 @@ class Playing(Task):
         bstr = pickle.dumps(objarr)
 
         py_socket.sendall(bstr)
+        """
