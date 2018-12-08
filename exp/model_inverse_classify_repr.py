@@ -35,8 +35,8 @@ class LinearNet(torch.nn.Module):
         return pred
 
 def train():
-    # source = 'sim'
-    source = 'real'
+    source = 'sim'
+    # source = 'real'
     data_size = 10000
     all_obj = True
     # all_obj = False
@@ -57,6 +57,21 @@ def train():
         data = SimData(data_size, all_obj=all_obj)
     else:
         data = RealData(all_obj=all_obj, path='data/note3.txt')
+
+    for i in range(len(data)):
+        d = data[i][1]
+        l = len(d) // 2
+        for j in range(l):
+            dist, bear = d[2*j:2*j+2]
+            if dist == -1.0:
+                invx, invy = 0.0, 0.0
+            else:
+                # invx = (1./dist) * np.cos(bear)
+                # invy = (1./dist) * np.sin(bear)
+                # invx = dist * np.cos(bear)
+                # invy = dist * np.sin(bear)
+                invx, invy = dist, bear
+            d[2*j], d[2*j+1] = invx, invy
 
 
     K = 1

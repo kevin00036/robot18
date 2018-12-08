@@ -42,35 +42,35 @@ def SimData(T, all_obj=False):
 		all_obs.append(obs)
 
 		p = sim.pos
-		print(p)
+		# print(p)
 		position.append((p[0], p[1]))
 	
 	np.save('obs.npy',np.array(all_obs))
 	
 	
-	plt.figure(figsize=[10,10])
-	axes = plt.gca()
-	axes.set_xlim([-1500,1500])
-	axes.set_ylim([-1000,1000])
+	# plt.figure(figsize=[10,10])
+	# axes = plt.gca()
+	# axes.set_xlim([-1500,1500])
+	# axes.set_ylim([-1000,1000])
 	
 	
-	prev_point = []
-	for p in position:
-		print(p)
-		x = p[0]
-		y = p[1]
+	# prev_point = []
+	# for p in position:
+		# print(p)
+		# x = p[0]
+		# y = p[1]
 		
-		for pt in prev_point:
-			pt.remove()	
-		point = []
-		point.append(plt.scatter(x, y))
+		# for pt in prev_point:
+			# pt.remove()	
+		# point = []
+		# point.append(plt.scatter(x, y))
 		
-		prev_point = point
-		plt.pause(0.2)	
+		# prev_point = point
+		# plt.pause(0.2)	
 	
 	return data
 
-def RealData(path='data/note2.txt', all_obj=False):
+def RealData(path='data/note3.txt', all_obj=False):
     f = open(path, 'r').read().strip().split()
     f = [list(map(float,d.split(','))) for d in f]
     data = [(
