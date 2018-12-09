@@ -97,4 +97,4 @@ if __name__ == '__main__':
         print(sim.get_obs())
         sim.step(0.1, 0.1, 0.1)
 
-    
+

@@ -9,8 +9,8 @@ from data import SimData, RealData
 
 dev = 'cuda'
 
-data = SimData(10000)
-# data = RealData()
+# data = SimData(20000, all_obj=True)
+data = RealData(all_obj=True)
 
 class SequenceDataset(Dataset):
     def __init__(self, data):

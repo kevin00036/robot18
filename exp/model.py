@@ -5,8 +5,8 @@ import numpy as np
 import random
 from data import SimData, RealData
 
-data = SimData(10000)
-# data = RealData()
+# data = SimData(10000)
+data = RealData(all_obj=True)
 
 K = 5
 data = [(
