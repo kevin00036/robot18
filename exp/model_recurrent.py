@@ -10,8 +10,8 @@ from render import *
 
 dev = 'cpu'
 
-data = SimData(20000, all_obj=True)
-# data = RealData(all_obj=True)
+# data = SimData(20000, all_obj=True)
+data = RealData(all_obj=True)
 
 class SequenceDataset(Dataset):
     def __init__(self, data):
@@ -59,10 +59,12 @@ class OtherRNN(torch.nn.Module):
         self.linear2 = torch.nn.Linear(self.hidden_dim, self.obs_dim)
         # self.linear3 = torch.nn.Linear(10, D_out)
 
-    def forward(self, x, dt):
+    def forward(self, x, dt, output_hidden=False, input_hidden=None):
         l = x.shape[1]
         # h = torch.zeros((x.shape[0], self.hidden_dim), dtype=torch.float32, device=dev)
         h = self.guess_hidden(x[:, 0, :-3])
+        if input_hidden is not None:
+            h = input_hidden
         out = []
         for i in range(l):
             inp = torch.cat([x[:, i], h], dim=-1)
@@ -73,7 +75,10 @@ class OtherRNN(torch.nn.Module):
             out.append(o)
 
         out = torch.stack(out, dim=1)
-        return out
+        if output_hidden:
+            return out, h
+        else:
+            return out
 
 
 obs_dim = len(data[0][1])
@@ -112,7 +117,7 @@ for epoch in range(10):
             x = torch.cat([obs, act], dim=-1)[:,:-1]
             y = obs[:,1:]
             dt = dt[:,:-1]
-            y_pred = model(x, dt)
+            y_pred = obs[:,:-1] + model(x, dt)
 
             # y = obs[:,1:]
             # last_obs = obs[:, 0:1]
@@ -142,9 +147,12 @@ for epoch in range(10):
         loss = np.mean(losses)
         print('{}:\t Loss = {:.4f}'.format(mode, loss))
 
+h = torch.zeros((1, model.hidden_dim), dtype=torch.float32, device=dev)
 for i, (dt, obs, act) in enumerate(val_normal_dataset):
     x = torch.cat([obs, act], dim=-1)
-    y_pred = model(x.unsqueeze(0).unsqueeze(1), dt.unsqueeze(0).unsqueeze(1)).squeeze(0).squeeze(0).data
+    y_pred, nh = model(x.unsqueeze(0).unsqueeze(1), dt.unsqueeze(0).unsqueeze(1),
+                       output_hidden=True, input_hidden=h)
+    y_pred = (obs + y_pred.squeeze(0).squeeze(0)).data
 
     print(obs * std_ + mean_)
     print(y_pred * std_ + mean_)
