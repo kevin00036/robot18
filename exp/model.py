@@ -3,15 +3,15 @@ import torch.nn.functional as F
 import torch.utils.data
 import numpy as np
 import random
-from data import SimData, RealData
+from data_many import SimData, RealData
 
-data = SimData(10000)
-# data = RealData()
+#data = SimData(10000)
+data = RealData()
 
 K = 5
 data = [(
     data[i][0], 
-    np.concatenate([data[i][1], data[i][1] - data[i-K][1]]), 
+    np.concatenate([data[i][1]]),#, data[i][1] - data[i-K][1]]), 
     # data[i][1] + data[i-K][1], 
     # data[i][1], 
     data[i][2], 
@@ -62,7 +62,7 @@ val_dataset = torch.utils.data.TensorDataset(*dataset[train_num:])
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, drop_last=True, shuffle=True)
 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, drop_last=False)
 
-for epoch in range(200):
+for epoch in range(30000):
     train_losses = []
     val_losses = []
     

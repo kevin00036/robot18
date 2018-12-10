@@ -42,9 +42,10 @@ def SimData(T, all_obj=False):
 		all_obs.append(obs)
 
 		p = sim.pos
-		print(p)
+		#print(p)
 		position.append((p[0], p[1]))
 	
+	"""
 	np.save('obs.npy',np.array(all_obs))
 	
 	
@@ -67,7 +68,7 @@ def SimData(T, all_obj=False):
 		
 		prev_point = point
 		plt.pause(0.2)	
-	
+	"""
 	return data
 
 def RealData(path='data/note2.txt', all_obj=False):

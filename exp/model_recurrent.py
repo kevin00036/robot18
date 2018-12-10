@@ -5,12 +5,12 @@ import torch.utils.data
 from torch.utils.data import Dataset
 import numpy as np
 import random
-from data import SimData, RealData
+from data_many import SimData, RealData
 
 dev = 'cuda'
 
-data = SimData(10000)
-# data = RealData()
+# data = SimData(10000)
+data = RealData()
 
 class SequenceDataset(Dataset):
     def __init__(self, data):
@@ -78,8 +78,8 @@ class OtherRNN(torch.nn.Module):
 obs_dim = len(data[0][1])
 act_dim = len(data[0][2])
 print(obs_dim, act_dim)
-# model = NormalRNN(obs_dim, act_dim).to(dev)
-model = OtherRNN(obs_dim, act_dim).to(dev)
+model = NormalRNN(obs_dim, act_dim).to(dev)
+#model = OtherRNN(obs_dim, act_dim).to(dev)
 
 criterion = torch.nn.MSELoss(reduction='elementwise_mean')
 # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
@@ -136,6 +136,7 @@ for epoch in range(50):
             y_pred = model(x, dt)
 
             # Compute and print loss
+            y_pred = obs[:,:-1]
             loss = criterion(y_pred, y)
 
             if i == 0:
