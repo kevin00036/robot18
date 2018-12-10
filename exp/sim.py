@@ -3,7 +3,9 @@ import random
 import math
 import torch
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
+	
 model_path = 'models/inverse_classify_sim.mdl'
 model_path_norm = model_path + '.norm'
 
@@ -201,45 +203,64 @@ if __name__ == '__main__':
 	
 	
 	test_initialize()
+	sum_dist = []
 	
+	for i in range(10000):
+		print("ROUND "+str(i))
 	
-	
-	K = 5
-	T = K
-	
-	start = sim.get_obs()
-	state = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)	
-	print(state)
-	for i in range(T//K):
-		act = random.randint(0, 6)
-		print(act)
-		for j in range(K):
-			action_mapping(sim, act)
-	end = sim.get_obs()
-
-	print(state)	
-	state2 = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)		
-	print(state2)
-	
-	
-	sim.fly(state)
-	
-
-	
-	start = sim.get_obs()
-	real_acts = []
-	for i in range(T):
-		act = test_query(start[1], end[1])
-		action_mapping(sim, act)
+		K = 5
+		T = K
+		
 		start = sim.get_obs()
-		real_acts.append(act)
-	pred_end = start
-	
-	state3 = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)		
-	print(state3)
-	print(real_acts)
-	
-	print(L2(end[1], pred_end[1]))
-	print([L2(state2[i], state3[i]) for i in range(4)])
+		state = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)	
+		print('='*50)
+		print("state start: ", state)
+		sim_acts = []
+		for i in range(T//K):
+			act = random.randint(0, 6)
+			#print(act)
+			for j in range(K):
+				action_mapping(sim, act)
+				sim_acts.append(act)
+		end = sim.get_obs()
 
+		state2 = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)		
+		print("state end: ", state2)
+		print("sim acts: ", sim_acts)
+		print('='*50)
+		
+		sim.fly(state)
+		
+
+		
+		start = sim.get_obs()
+		real_acts = []
+		for i in range(T):
+			act = test_query(start[1], end[1])
+			action_mapping(sim, act)
+			start = sim.get_obs()
+			real_acts.append(act)
+		pred_end = start
+		
+		state3 = (sim.pos.copy(), sim.vel.copy(), sim.orien, sim.angvel)		
+		print("predict state end: ", state3)
+		print("real acts: ", real_acts)
+		print('='*50)
+		
+		print("result:")
+		print(L2(end[1], pred_end[1]))
+		print([L2(state2[i], state3[i]) for i in range(4)])
+		print('='*50)
+		print('\n\n\n')
+		
+		
+		dist = L2(end[1], pred_end[1])
+		sum_dist.append(dist)
 	
+	print(np.mean(sum_dist))
+	
+	
+	
+	n, bins, patches = plt.hist(x=sum_dist, bins=100, color='#0504aa', alpha=0.7, rwidth=0.85)
+	plt.grid(axis='y', alpha=0.75)
+	plt.show()
