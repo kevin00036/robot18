@@ -4,24 +4,88 @@ import torch.utils.data
 import numpy as np
 import random
 from data import SimData, RealData
+from render import *
 
-# data = SimData(10000)
-data = RealData(all_obj=True)
+dev = 'cpu'
 
-K = 5
-data = [(
-    data[i][0], 
-    np.concatenate([data[i][1], data[i][1] - data[i-K][1]]), 
-    # data[i][1] + data[i-K][1], 
-    # data[i][1], 
-    data[i][2], 
-    data[i+1][1]
-) for i in range(K, len(data)-1)]
+data = SimData(20000, all_obj=True)
+# data = RealData(all_obj=True)
 
-for i in range(10): print(data[i])
+evald_ = torch.from_numpy(np.array([x[1] for x in data], dtype=np.float32)) # obs
+eval_mean_ = evald_.mean(dim=0)
+eval_std_ = evald_.std(dim=0)
 
+train_num = int(len(data)*0.8)
+train_data = data[:train_num]
+val_data = data[train_num:]
+
+def preproc(d):
+    K = 5
+    data = [(
+        d[i][0], 
+        d[i][1],
+        np.concatenate([d[i][1], d[i][1] - d[i-K][1]]), 
+        # data[i][1] + data[i-K][1], 
+        # data[i][1], 
+        d[i][2], 
+        d[i+1][1],
+    ) for i in range(K, len(d)-1)]
+    return data
+
+datas = {
+    'train': preproc(train_data),
+    'val': preproc(val_data),
+}
+
+for k in datas:
+    datas[k]= [torch.from_numpy(np.array(x)).float().to(dev) for x in zip(*datas[k])]
+
+normalize_idxs = [1, 2, 3, 4] # Which indexes (ex: dt, obs, act) to normalize
+means_, stds_ = {}, {}
+ddim = 1 # How many prefix dims to normalize along, usually 1. (2 when the data are sequences)
+for i in normalize_idxs:
+    means_[i] = datas['train'][i].reshape(-1, *datas['train'][i].shape[ddim:]).mean(dim=0)
+    stds_[i] = datas['train'][i].reshape(-1, *datas['train'][i].shape[ddim:]).std(dim=0)
+
+def normalize(d, inv=False):
+    r = []
+    for i in range(len(d)):
+        if i in normalize_idxs:
+            if not inv:
+                r.append((d[i] - means_[i]) / stds_[i])
+            else:
+                r.append((d[i] * stds_[i]) + means_[i])
+        else:
+            r.append(d[i])
+    return r
+
+for k in datas:
+    datas[k] = normalize(datas[k])
+
+batch_size = 32
+datasets = {}
+loaders = {}
+for k in datas:
+    datasets[k] = torch.utils.data.TensorDataset(*datas[k])
+    loaders[k] = torch.utils.data.DataLoader(
+        datasets[k],
+        batch_size=batch_size,
+        drop_last=True,
+        shuffle=(k == 'train'),
+    )
+
+print('=== Data processing completed ===')
 
 class LinearNet(torch.nn.Module):
+    def __init__(self, D_in, D_out):
+        super().__init__()
+        self.linear = torch.nn.Linear(D_in, D_out)
+
+    def forward(self, x):
+        x = self.linear(x)
+        return x
+
+class FeedForwardNet(torch.nn.Module):
     def __init__(self, D_in, D_out):
         super().__init__()
         self.linear = torch.nn.Linear(D_in, 10)
@@ -36,80 +100,68 @@ class LinearNet(torch.nn.Module):
         x = self.linear3(x)
         return x
 
-
-obs_dim = len(data[0][1])
-act_dim = len(data[0][2])
-pred_dim = len(data[0][3])
+obs_dim = datas['train'][2].shape[-1]
+act_dim = datas['train'][3].shape[-1]
+pred_dim = datas['train'][4].shape[-1]
 print(obs_dim, act_dim, pred_dim)
 model = LinearNet(obs_dim + act_dim, pred_dim)
+# model = FeedForwardNet(obs_dim + act_dim, pred_dim)
 
 criterion = torch.nn.MSELoss(reduction='elementwise_mean')
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
+# optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-batch_size = 32
-data = [torch.from_numpy(np.array(x)).float() for x in zip(*data)]
-mean_, std_ = data[1].mean(dim=0), data[1].std(dim=0)
-mean3_, std3_ = data[3].mean(dim=0), data[3].std(dim=0)
-data[1] = (data[1] - mean_) / std_
-data[3] = (data[3] - mean3_) / std3_
-dataset = torch.utils.data.TensorDataset(*data)
+def evaluate_obs_dis(y_pred, y):
+    ypn = (y_pred - eval_mean_) / eval_std_
+    yn = (y - eval_mean_) / eval_std_
+    dis = ((ypn - yn) ** 2).mean()
+    return dis.data.numpy()
 
-train_num = int(len(dataset)*0.8)
 
-train_dataset = torch.utils.data.TensorDataset(*dataset[:train_num])
-val_dataset = torch.utils.data.TensorDataset(*dataset[train_num:])
+for epoch in range(30):
+    print('\n ===== Epoch {}\t ====='.format(epoch+1))
+    for mode in datas:
+        losses = []
+        eval_diss = []
+        loader = loaders[mode]
 
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, drop_last=True, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, drop_last=False)
-
-for epoch in range(200):
-    train_losses = []
-    val_losses = []
-    
-    for i, (dt, obs, act, obs_next) in enumerate(train_loader):
-        # print(dt, obs, act, obs_next)
-        # Forward pass: Compute predicted y by passing x to the model
-
-        x = torch.cat([obs, act], dim=1)
-        y = obs_next
-        y_pred = model(x)
-
-        # Compute and print loss
-        loss = criterion(y_pred, y)
-        # print(epoch, loss.item())
-
-        if i == 0:
-            # print(float(loss))
-            # print((y - y_pred).pow(2).sum())
-            print(x[0], y[0], y_pred[0].data)
-
-        # Zero gradients, perform a backward pass, and update the weights.
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        # train_losses.append(float(criterion(y_pred * std_, y * std_)))
-        train_losses.append(float(loss))
-
-    with torch.no_grad():
-        for i, (dt, obs, act, obs_next) in enumerate(val_loader):
-            # print(dt, obs, act, obs_next)
-            # Forward pass: Compute predicted y by passing x to the model
-
-            x = torch.cat([obs, act], dim=1)
+        for i, (dt, obs, obs_aug, act, obs_next) in enumerate(loader):
+            x = torch.cat([obs_aug, act], dim=-1)
             y = obs_next
-            y_pred = model(x)
-
-            # if i == 0 and epoch == 19:
-                # for z in range(batch_size):
-                    # print(x[z][:-3]*std_+mean_, x[z][-3:], y[z]*std3_+mean3_, y_pred[z].data*std3_+mean3_)
+            y_pred = obs + model(x)
 
             # Compute and print loss
             loss = criterion(y_pred, y)
-            val_losses.append(float(loss))
-            # val_losses.append(float(criterion(y_pred * std_, y * std_)))
 
-    train_loss = np.mean(train_losses)
-    val_loss = np.mean(val_losses)
-    print(f'{epoch:3d}: Train={train_loss:.5f}, Val={val_loss:.5f}')
-    
+            y_pred_unnorm = (y_pred * stds_[1]) + means_[1]
+            y_unnorm = (y * stds_[1]) + means_[1]
+            eval_dis = evaluate_obs_dis(y_pred_unnorm, y_unnorm)
+            eval_diss.append(float(eval_dis))
+
+            # Zero gradients, perform a backward pass, and update the weights.
+            if mode == 'train':
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+            losses.append(float(loss))
+
+        loss = np.mean(losses)
+        eval_dis = np.mean(eval_diss)
+        print('{}:\t Loss = {:.4f}\t Dis = {:.4f}'.format(mode, loss, eval_dis))
+
+for i, (dt, obs, obs_aug, act, obs_next) in enumerate(datasets['val']):
+    x = torch.cat([obs_aug, act], dim=-1).unsqueeze(0)
+    # dt = dt.unsqueeze(0)
+    y_pred = obs + model(x).squeeze(0) * 5
+    y_pred = y_pred.data
+
+    y_pred = (y_pred * stds_[1]) + means_[1]
+    obs = (obs * stds_[1]) + means_[1]
+
+    reset_frame()
+    render_objs(obs)
+    render_objs(y_pred, rad=5)
+    render_show()
+
+

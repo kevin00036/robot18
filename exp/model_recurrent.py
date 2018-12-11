@@ -10,11 +10,14 @@ from render import *
 
 dev = 'cpu'
 
-# data = SimData(20000, all_obj=True)
-data = RealData(all_obj=True)
+data = SimData(20000, all_obj=True)
+# data = RealData(all_obj=True)
 
 obs_dim = len(data[0][1])
 act_dim = len(data[0][2])
+evald_ = torch.from_numpy(np.array([x[1] for x in data], dtype=np.float32)) # obs
+eval_mean_ = evald_.mean(dim=0)
+eval_std_ = evald_.std(dim=0)
 
 train_num = int(len(data)*0.8)
 train_data = data[:train_num]
@@ -63,11 +66,12 @@ for k in datas:
     datas[k] = normalize(datas[k])
 
 batch_size = 32
+datasets = {}
 loaders = {}
 for k in datas:
-    dataset = torch.utils.data.TensorDataset(*datas[k])
+    datasets[k] = torch.utils.data.TensorDataset(*datas[k])
     loaders[k] = torch.utils.data.DataLoader(
-        dataset,
+        datasets[k],
         batch_size=batch_size,
         drop_last=True,
         shuffle=(k == 'train'),
@@ -119,8 +123,9 @@ class OtherRNN(torch.nn.Module):
         for i in range(l):
             inp = torch.cat([x[:, i], h], dim=-1)
             # print(inp.shape, dt.shape)
-            dh = dt[:, i].unsqueeze(-1) * self.recur_linear(inp)
-            h = h + dh
+            # dh = dt[:, i].unsqueeze(-1) * self.recur_linear(inp)
+            # h = h + dh
+            h = self.recur_linear(inp)
             o = self.linear2(F.relu(self.linear(h)))
             out.append(o)
 
@@ -130,38 +135,51 @@ class OtherRNN(torch.nn.Module):
         else:
             return out
 
-# model = NormalRNN(obs_dim, act_dim).to(dev)
-model = OtherRNN(obs_dim, act_dim).to(dev)
+model = NormalRNN(obs_dim, act_dim).to(dev)
+# model = OtherRNN(obs_dim, act_dim).to(dev)
 
 criterion = torch.nn.MSELoss(reduction='elementwise_mean')
 # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-for epoch in range(30):
+def evaluate_obs_dis(y_pred, y):
+    ypn = (y_pred - eval_mean_) / eval_std_
+    yn = (y - eval_mean_) / eval_std_
+    dis = ((ypn - yn) ** 2).mean()
+    return dis.data.numpy()
+
+for epoch in range(10):
     print('\n ===== Epoch {}\t ====='.format(epoch+1))
     for mode in datas:
         losses = []
+        eval_diss = []
         loader = loaders[mode]
         
         for i, (dt, obs, act) in enumerate(loader):
-            x = torch.cat([obs, act], dim=-1)[:,:-1]
-            y = obs[:,1:]
-            dt = dt[:,:-1]
-            y_pred = obs[:,:-1] + model(x, dt)
-
+            # x = torch.cat([obs, act], dim=-1)
             # y = obs[:,1:]
-            # last_obs = obs[:, 0:1]
-            # y_pred = []
-            # for t in range(obs.shape[1] - 1):
-                # x = torch.cat([last_obs, act[:, t:t+1]], dim=-1)
-                # d = dt[:, t:t+1]
-                # yp = model(x, dt)
-                # y_pred.append(yp)
-            # y_pred = torch.cat(y_pred, dim=1)
+            # y_pred = obs + model(x, dt)
 
+            y = obs[:,1:]
+            last_obs = obs[:, 0:1]
+            y_pred = []
+            for t in range(obs.shape[1]):
+                x = torch.cat([last_obs, act[:, t:t+1]], dim=-1)
+                d = dt[:, t:t+1]
+                yp = last_obs + model(x, dt)
+                y_pred.append(yp)
+                last_obs = yp
+            y_pred = torch.cat(y_pred, dim=1)
+
+            y_pred = y_pred[:, :-1]
 
             # Compute and print loss
             loss = criterion(y_pred, y)
+
+            y_pred_unnorm = (y_pred * stds_[1]) + means_[1]
+            y_unnorm = (y * stds_[1]) + means_[1]
+            eval_dis = evaluate_obs_dis(y_pred_unnorm, y_unnorm)
+            eval_diss.append(eval_dis)
 
             # if i == 0:
                 # print(x[0], y[0], y_pred[0].data)
@@ -175,20 +193,24 @@ for epoch in range(30):
             losses.append(float(loss))
 
         loss = np.mean(losses)
-        print('{}:\t Loss = {:.4f}'.format(mode, loss))
+        eval_dis = np.mean(eval_diss)
+        print('{}:\t Loss = {:.4f}\t Dis = {:.4f}'.format(mode, loss, eval_dis))
 
-h = torch.zeros((1, model.hidden_dim), dtype=torch.float32, device=dev)
-for i, (dt, obs, act) in enumerate(val_normal_dataset):
-    x = torch.cat([obs, act], dim=-1)
-    y_pred, nh = model(x.unsqueeze(0).unsqueeze(1), dt.unsqueeze(0).unsqueeze(1),
-                       output_hidden=True, input_hidden=h)
-    y_pred = (obs + y_pred.squeeze(0).squeeze(0)).data
+# h = torch.zeros((1, model.hidden_dim), dtype=torch.float32, device=dev)
+for i, (dt, obs, act) in enumerate(datasets['val_n']):
+    x = torch.cat([obs, act], dim=-1).unsqueeze(0)
+    dt = dt.unsqueeze(0)
+    # y_pred, nh = model(x, dt, output_hidden=True, input_hidden=h)
+    y_pred = model(x, dt)
+    y_pred = (obs + y_pred).data.squeeze(0)
+    # h = nh
 
-    print(obs * std_ + mean_)
-    print(y_pred * std_ + mean_)
+    y_pred = (y_pred[0] * stds_[1]) + means_[1]
+    obs = (obs[0] * stds_[1]) + means_[1]
+
     reset_frame()
-    render_objs(obs * std_ + mean_)
-    render_objs(y_pred * std_ + mean_, rad=5)
+    render_objs(obs)
+    render_objs(y_pred, rad=5)
     render_show()
 
 
