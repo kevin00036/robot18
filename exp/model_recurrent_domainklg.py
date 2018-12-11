@@ -84,8 +84,8 @@ class OtherRNN(torch.nn.Module):
 obs_dim = len(data[0][1])
 act_dim = len(data[0][2])
 print(obs_dim, act_dim)
-model = NormalRNN(obs_dim, act_dim).to(dev)
-# model = OtherRNN(obs_dim, act_dim).to(dev)
+# model = NormalRNN(obs_dim, act_dim).to(dev)
+model = OtherRNN(obs_dim, act_dim).to(dev)
 
 criterion = torch.nn.MSELoss(reduction='elementwise_mean')
 # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
