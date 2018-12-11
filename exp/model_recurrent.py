@@ -13,17 +13,67 @@ dev = 'cpu'
 # data = SimData(20000, all_obj=True)
 data = RealData(all_obj=True)
 
-class SequenceDataset(Dataset):
-    def __init__(self, data):
-        self.seq_len = 10
-        self.tot_len = len(data[0]) - self.seq_len + 1
-        self.data = data
-        
-    def __len__(self):
-        return self.tot_len
+obs_dim = len(data[0][1])
+act_dim = len(data[0][2])
 
-    def __getitem__(self, idx):
-        return tuple(x[idx:idx+self.seq_len] for x in self.data)
+train_num = int(len(data)*0.8)
+train_data = data[:train_num]
+val_data = data[train_num:]
+
+def preproc_sequence(d, seq_len=10):
+    ret = []
+    num = len(d[0])
+    for i in range(len(d) - seq_len + 1):
+        lst = []
+        for j in range(num):
+            r = [x[j] for x in d[i:i+seq_len]]
+            lst.append(r)
+        ret.append(tuple(lst))
+    return ret
+
+datas = {
+    'train': preproc_sequence(train_data),
+    'val': preproc_sequence(val_data),
+    'val_n': preproc_sequence(val_data, seq_len=2),
+}
+
+for k in datas:
+    datas[k]= [torch.from_numpy(np.array(x)).float().to(dev) for x in zip(*datas[k])]
+
+normalize_idxs = [1, 2] # Which indexes (ex: dt, obs, act) to normalize
+means_, stds_ = {}, {}
+ddim = 2 # How many prefix dims to normalize along, usually 1. (2 when the data are sequences)
+for i in normalize_idxs:
+    means_[i] = datas['train'][i].reshape(-1, *datas['train'][i].shape[ddim:]).mean(dim=0)
+    stds_[i] = datas['train'][i].reshape(-1, *datas['train'][i].shape[ddim:]).std(dim=0)
+
+def normalize(d, inv=False):
+    r = []
+    for i in range(len(d)):
+        if i in normalize_idxs:
+            if not inv:
+                r.append((d[i] - means_[i]) / stds_[i])
+            else:
+                r.append((d[i] * stds_[i]) + means_[i])
+        else:
+            r.append(d[i])
+    return r
+
+for k in datas:
+    datas[k] = normalize(datas[k])
+
+batch_size = 32
+loaders = {}
+for k in datas:
+    dataset = torch.utils.data.TensorDataset(*datas[k])
+    loaders[k] = torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        drop_last=True,
+        shuffle=(k == 'train'),
+    )
+
+print('=== Data processing completed ===')
 
 
 class NormalRNN(torch.nn.Module):
@@ -80,38 +130,18 @@ class OtherRNN(torch.nn.Module):
         else:
             return out
 
-
-obs_dim = len(data[0][1])
-act_dim = len(data[0][2])
-print(obs_dim, act_dim)
-model = NormalRNN(obs_dim, act_dim).to(dev)
-# model = OtherRNN(obs_dim, act_dim).to(dev)
+# model = NormalRNN(obs_dim, act_dim).to(dev)
+model = OtherRNN(obs_dim, act_dim).to(dev)
 
 criterion = torch.nn.MSELoss(reduction='elementwise_mean')
 # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-batch_size = 32
-train_num = int(len(data)*0.8)
-print(train_num)
-
-data = [torch.from_numpy(np.array(x)).float().to(dev) for x in zip(*data)]
-mean_, std_ = data[1].mean(dim=0), data[1].std(dim=0)
-data[1] = (data[1] - mean_) / std_
-
-
-train_dataset = SequenceDataset([x[:train_num] for x in data])
-val_dataset = SequenceDataset([x[train_num:] for x in data])
-val_normal_dataset = torch.utils.data.TensorDataset(*[x[train_num:] for x in data])
-
-train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, drop_last=True, shuffle=True)
-val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, drop_last=True)
-
 for epoch in range(30):
     print('\n ===== Epoch {}\t ====='.format(epoch+1))
-    for mode in ['train', 'val']:
+    for mode in datas:
         losses = []
-        loader = (train_loader if mode == 'train' else val_loader)
+        loader = loaders[mode]
         
         for i, (dt, obs, act) in enumerate(loader):
             x = torch.cat([obs, act], dim=-1)[:,:-1]
