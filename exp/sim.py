@@ -20,8 +20,8 @@ class Simulator:
         self.reset()
 
     def reset(self):
-        ball_x = random.randrange(-1250, 1250)
-        ball_y = random.randrange(-750, 750)
+        ball_x = random.randrange(-11250, 1250)
+        ball_y = random.randrange(-1750, 750)
         self.objects = [
             Point(ball_x, ball_y),
             Point(1500, 1000),

@@ -4,6 +4,17 @@ import random
 import pickle
 import matplotlib.pyplot as plt
 
+def get_actvec(act):
+    return [
+        (0., 0., 0.),
+        (0.5, 0., 0.),
+        (-0.5, 0., 0.),
+        (0., 0.5, 0.),
+        (0., -0.5, 0.),
+        (0., 0., 0.5),
+        (0., 0., -0.5),
+    ][act]
+
 def SimData(T, all_obj=False):
 	random.seed(34021501)
 	sim = Simulator()
