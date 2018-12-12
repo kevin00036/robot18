@@ -158,10 +158,12 @@ for i, (dt, obs, obs_aug, act, obs_next) in enumerate(datasets['val']):
 
     y_pred = (y_pred * stds_[1]) + means_[1]
     obs = (obs * stds_[1]) + means_[1]
+    act = (act * stds_[3]) + means_[3]
 
     reset_frame()
     render_objs(obs)
     render_objs(y_pred, rad=5)
+    render_act(discrete_action(act))
     render_show()
 
 

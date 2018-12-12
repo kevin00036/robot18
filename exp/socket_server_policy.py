@@ -66,6 +66,7 @@ def main():
         reset_frame()
         render_objs(obs)
         render_objs(goal_obs, rad=7, outline=True)
+        render_act(pred_act)
         render_show(1)
 
 if __name__ == '__main__':
