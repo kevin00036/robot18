@@ -27,7 +27,7 @@ def reset_frame():
     orig = trans_pos(0, 0)
     draw.rectangle([(orig[0]-wid,orig[1]-wid), (orig[0]+wid,orig[1]+wid)], fill='black')
 
-def render_objs(obs, rad=10):
+def render_objs(obs, rad=10, outline=False):
     global image, draw
     num = len(obs) // 2
     for j in range(num):
@@ -37,7 +37,9 @@ def render_objs(obs, rad=10):
         x = dist * np.cos(bear)
         y = dist * np.sin(bear)
         loc = trans_pos(x, y)
-        draw.ellipse([(loc[0]-rad,loc[1]-rad), (loc[0]+rad,loc[1]+rad)], fill=colors[j])
+        draw.ellipse([
+            (loc[0]-rad,loc[1]-rad), (loc[0]+rad,loc[1]+rad)], 
+                     fill=colors[j], outline=('black' if outline else None))
 
 def render_show(delay=200):
     global image, draw
