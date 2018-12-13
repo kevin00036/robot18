@@ -1,0 +1,33 @@
+Author: Kai-Chi Huang, Hsin-Ping Huang
+
+This is the codes for the final project of CS393R --
+Learning Environment Models from Data
+
+======================================================
+
+Models:
+model.py -- Linear Regression and Basic NN
+model_domainklg.py -- NN with domain knowledge (ShareWeight, VisClassify)
+heuristic_forward.py -- Heuristic method
+model_inverse_classfy.py -- Inverse Models
+models/ -- folder to save models
+
+Utils:
+sim.py -- Simulator
+data.py -- Data Loader
+render.py -- Codes to visualize observations
+socker_{client,server}.py -- socket servers to comminucate between the computer and the robot
+
+=====================================================
+
+Most model files can be directly executed to train the model:
+>> python xxx.py
+ex: (xxx.py = model.py)
+
+Directly running 
+>> python render.py
+will provide an example of visualizing the observations
+
+=====================================================
+
+Packages needed: numpy, matplotlib, pytorch, opencv, PIL
