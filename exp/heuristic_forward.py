@@ -8,8 +8,8 @@ from render import *
 
 dev = 'cpu'
 
-# data = SimData(20000, all_obj=True)
-data = RealData(all_obj=True)
+data = SimData(20000, all_obj=True)
+# data = RealData(all_obj=True)
 
 evald_ = torch.from_numpy(np.array([x[1] for x in data], dtype=np.float32)) # obs
 eval_mean_ = evald_.mean(dim=0)
@@ -83,7 +83,7 @@ class LinearNet(torch.nn.Module):
         self.moves = torch.nn.Parameter(torch.zeros((1, 1, 6, 2)))
         self.angle_thres = torch.nn.Parameter(torch.ones(()) * np.pi * 0.25)
 
-    def forward(self, obs, act, seen):
+    def forward(self, obs, act, seen, mult=1.0):
         bs = obs.shape[0]
         obs = obs.reshape(bs, -1, 2)
         # x = self.linear(x)
@@ -105,7 +105,7 @@ class LinearNet(torch.nn.Module):
 
         # moves = [(-10, 0), (10, 0), (0, -10), (0, 10), (0, -0.1), (0, 0.1)]
         # moves = torch.from_numpy(np.array(moves)).float().unsqueeze(0).unsqueeze(0)
-        moves = self.moves
+        moves = self.moves * mult
         angle_thres = self.angle_thres
 
         # 0
@@ -194,7 +194,7 @@ for epoch in range(20):
 
 for i, (dt, obs, act, obs_next, seen, seen_next) in enumerate(datasets['val']):
     # x = torch.cat([obs_aug, act], dim=-1).unsqueeze(0)
-    y_pred = model(obs.unsqueeze(0), act.unsqueeze(0), seen.unsqueeze(0)).squeeze(0)
+    y_pred = model(obs.unsqueeze(0), act.unsqueeze(0), seen.unsqueeze(0), mult=3.0).squeeze(0)
     y_pred = y_pred.data
 
     # y_pred = (y_pred * stds_[1]) + means_[1]
@@ -205,6 +205,9 @@ for i, (dt, obs, act, obs_next, seen, seen_next) in enumerate(datasets['val']):
     render_objs(obs)
     render_objs(y_pred, rad=5, outline=True)
     render_act(discrete_action(act))
-    render_show(100)
+    # render_show(100)
+    img_path = 'imgs/forward_heu/'
+    img_name = img_path + '{:03d}.jpg'.format(i)
+    render_save(img_name)
 
 

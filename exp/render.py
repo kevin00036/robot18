@@ -71,6 +71,10 @@ def render_show(delay=200):
     cv2.imshow('a', np.array(image)[...,::-1])
     cv2.waitKey(delay)
 
+def render_save(filename):
+    global image, draw
+    cv2.imwrite(filename, np.array(image)[...,::-1])
+
 if __name__ == '__main__':
     # data = RealData(all_obj=True)
     data = SimData(20000, all_obj=True)

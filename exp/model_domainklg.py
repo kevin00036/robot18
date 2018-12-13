@@ -156,7 +156,7 @@ class FeedForwardNetClass(torch.nn.Module):
 
         fo = self.linear_fo(obs)
         fs = self.linear_fs(seen * 0.)
-        f = seen * fs + (1-seen) * fo
+        f = seen * fo + (1-seen) * fs
 
         inp = torch.cat([f, act], dim=-1)
         res = self.linear2(inp)
@@ -191,7 +191,7 @@ def evaluate_obs_dis(y_pred, y):
     return dis.data.numpy()
 
 
-for epoch in range(50):
+for epoch in range(20):
     print('\n ===== Epoch {}\t ====='.format(epoch+1))
     for mode in datas:
         losses = []
@@ -233,7 +233,8 @@ for epoch in range(50):
         print('{}:\t Loss = {:.4f}\t Dis = {:.4f}'.format(mode, loss, eval_dis))
 
 for i, (dt, obs, obs_aug, act, obs_next, seen, seen_next) in enumerate(datasets['val']):
-    # dt = dt.unsqueeze(0)
+    if i >= 1000: break
+
     # y_pred = obs + model(obs_aug.unsqueeze(0), act.unsqueeze(0)).squeeze(0) * 5
 
     dobs, seen_pred = model(obs_aug.unsqueeze(0), act.unsqueeze(0), seen.unsqueeze(0))
@@ -252,5 +253,8 @@ for i, (dt, obs, obs_aug, act, obs_next, seen, seen_next) in enumerate(datasets[
     render_objs(y_pred, rad=5, outline=True)
     render_act(discrete_action(act))
     render_show()
+    # img_path = 'imgs/forward_vis/'
+    # img_name = img_path + '{:03d}.jpg'.format(i)
+    # render_save(img_name)
 
 
